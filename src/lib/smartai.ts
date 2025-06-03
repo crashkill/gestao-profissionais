@@ -127,10 +127,6 @@ function generateOfflineAnalysis(question: string, professionals: any[]): string
 
   insights.push(
     ``,
-    `**💡 Para análises mais detalhadas:**`,
-    `• Configure uma API gratuita: https://api.together.xyz/ (recebe $1 grátis)`,
-    `• Ou use Groq: https://console.groq.com/ (totalmente gratuito)`,
-    ``,
     `---`,
     `*Análise offline realizada em ${Date.now() - elapsed}ms*`
   );
