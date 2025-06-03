@@ -20,145 +20,194 @@ export async function askSmartAI(question: string, professionals: any[]): Promis
         messages: [
           {
             role: 'system',
-            content: 'Você é um assistente de RH da HITSS especializado em análise de profissionais de TI. Responda de forma clara e útil.'
+            content: `Você é um assistente especializado em análise de dados de RH da HITSS. Analise os dados fornecidos e responda de forma objetiva e útil. 
+
+DADOS DOS PROFISSIONAIS:
+${JSON.stringify(professionals, null, 2)}
+
+Responda sempre em português brasileiro de forma clara e direta.`
           },
           {
             role: 'user',
-            content: `Analise os dados dos ${professionals.length} profissionais da HITSS.\n\nPergunta: ${question}\n\nForneça insights úteis baseados nos dados disponíveis.`
+            content: question
           }
         ],
-        max_tokens: 512,
+        max_tokens: 1000,
         temperature: 0.7,
-      }),
+        stream: false
+      })
     });
 
     if (response.ok) {
       const data = await response.json();
-      const result = data.choices?.[0]?.message?.content;
-      if (result) {
-        const elapsed = Date.now() - startTime;
-        console.log(`✅ [SMART AI] Together.xyz GRATUITO funcionou! (${elapsed}ms)`);
-        return `🆓 **Llama 3.3 70B (Gratuito) - Together.xyz**\n\n${result}\n\n---\n*Resposta em ${elapsed}ms*`;
+      const answer = data.choices?.[0]?.message?.content;
+      if (answer) {
+        const endTime = Date.now();
+        console.log(`✅ [SMART AI] Together.xyz respondeu em ${endTime - startTime}ms`);
+        return `${answer}\n\n---\nResposta via Together.xyz Llama 3.3 70B (${endTime - startTime}ms)`;
       }
     }
   } catch (error) {
-    console.log('❌ [SMART AI] Together.xyz gratuito falhou:', error);
+    console.log('⚠️ [SMART AI] Together.xyz falhou:', error);
   }
 
   // Opção 2: Tentar Groq (se API key disponível)
-  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (groqKey) {
+  if (import.meta.env.VITE_GROQ_API_KEY) {
     try {
-      console.log('⚡ [SMART AI] Tentando Groq ultra rápido...');
-      const result = await askGroq(question, professionals);
-      if (!result.includes('Groq Temporariamente Indisponível')) {
-        const elapsed = Date.now() - startTime;
-        console.log(`✅ [SMART AI] Groq funcionou! (${elapsed}ms)`);
-        return result + `\n\n---\n*Resposta em ${elapsed}ms*`;
-      }
+      console.log('⚡ [SMART AI] Tentando Groq...');
+      const answer = await askGroq(question, professionals);
+      const endTime = Date.now();
+      console.log(`✅ [SMART AI] Groq respondeu em ${endTime - startTime}ms`);
+      return `${answer}\n\n---\nResposta via Groq (${endTime - startTime}ms)`;
     } catch (error) {
-      console.log('❌ [SMART AI] Groq falhou:', error);
+      console.log('⚠️ [SMART AI] Groq falhou:', error);
     }
   }
 
-  // Opção 3: Tentar Together.xyz com API key (se disponível)
-  const togetherKey = import.meta.env.VITE_TOGETHER_API_KEY;
-  if (togetherKey) {
+  // Opção 3: Tentar Together.xyz com API Key (se disponível)
+  if (import.meta.env.VITE_TOGETHER_API_KEY) {
     try {
       console.log('🔑 [SMART AI] Tentando Together.xyz com API key...');
-      const result = await askDeepSeek(question, professionals);
-      if (!result.includes('Erro temporário')) {
-        const elapsed = Date.now() - startTime;
-        console.log(`✅ [SMART AI] Together.xyz com API key funcionou! (${elapsed}ms)`);
-        return result + `\n\n---\n*Resposta em ${elapsed}ms*`;
-      }
+      const answer = await askDeepSeek(question, professionals);
+      const endTime = Date.now();
+      console.log(`✅ [SMART AI] Together.xyz Premium respondeu em ${endTime - startTime}ms`);
+      return `${answer}\n\n---\nResposta via Together.xyz Premium (${endTime - startTime}ms)`;
     } catch (error) {
-      console.log('❌ [SMART AI] Together.xyz com API key falhou:', error);
+      console.log('⚠️ [SMART AI] Together.xyz Premium falhou:', error);
     }
   }
 
-  // Opção 4: Análise offline inteligente (fallback final)
-  console.log('💡 [SMART AI] Todas as IAs falharam, usando análise offline...');
-  return generateOfflineAnalysis(question, professionals);
+  // Opção 4: Análise Offline Inteligente com dados reais
+  console.log('💡 [SMART AI] Executando análise offline inteligente...');
+  return generateSmartOfflineAnalysis(question, professionals);
 }
 
-// Análise offline inteligente quando todas as IAs falham
-function generateOfflineAnalysis(question: string, professionals: any[]): string {
-  const stats = analyzeData(professionals);
-  const elapsed = Date.now();
+// Análise offline inteligente com dados reais
+function generateSmartOfflineAnalysis(question: string, professionals: any[]): string {
+  console.log('🔍 [ANÁLISE OFFLINE] Processando dados reais dos profissionais...');
   
-  const insights = [
-    `📊 **Análise Offline Inteligente**`,
-    ``,
-    `**Pergunta:** "${question}"`,
-    ``,
-    `**Dados Analisados:** ${stats.total} profissionais da HITSS`,
-    ``,
-    `**📈 Estatísticas Principais:**`,
-    `• **Colaboradores CLT:** ${stats.clt} (${stats.cltPercent}%)`,
-    `• **Colaboradores PJ:** ${stats.pj} (${stats.pjPercent}%)`,
-    `• **Tecnologia mais comum:** ${stats.topTech.name} (${stats.topTech.count} profissionais)`,
-    `• **Senioridade predominante:** ${stats.topSeniority.name} (${stats.topSeniority.count} profissionais)`,
-    ``,
-    `**🔍 Insights Baseados na Pergunta:**`,
-  ];
-
-  // Análise inteligente baseada na pergunta
-  const questionLower = question.toLowerCase();
+  // Estatísticas reais baseadas nos dados
+  const totalProfessionals = professionals.length;
   
-  if (questionLower.includes('java')) {
-    insights.push(`• **Java:** ${stats.technologies.java || 0} profissionais têm conhecimento em Java`);
-  }
-  if (questionLower.includes('javascript') || questionLower.includes('js')) {
-    insights.push(`• **JavaScript:** ${stats.technologies.javascript || 0} profissionais dominam JavaScript`);
-  }
-  if (questionLower.includes('python')) {
-    insights.push(`• **Python:** ${stats.technologies.python || 0} profissionais trabalham com Python`);
-  }
-  if (questionLower.includes('react')) {
-    insights.push(`• **React:** ${stats.technologies.react || 0} profissionais são experientes em React`);
-  }
-  if (questionLower.includes('senior') || questionLower.includes('sênior')) {
-    insights.push(`• **Seniores:** Aproximadamente ${Math.round(stats.total * 0.35)} profissionais com perfil sênior`);
-  }
-  if (questionLower.includes('júnior') || questionLower.includes('junior')) {
-    insights.push(`• **Juniores:** Aproximadamente ${Math.round(stats.total * 0.25)} profissionais com perfil júnior`);
-  }
-
-  insights.push(
-    ``,
-    `---`,
-    `*Análise offline realizada em ${Date.now() - elapsed}ms*`
-  );
-
-  return insights.join('\n');
-}
-
-// Função para analisar dados offline
-function analyzeData(professionals: any[]) {
-  const total = professionals.length;
-  const clt = professionals.filter(p => p.tipo_contrato?.toLowerCase().includes('clt')).length;
-  const pj = total - clt;
+  // Análise de contratos (CLT vs PJ)
+  const cltCount = professionals.filter(p => 
+    p.tipo_contrato?.toLowerCase().includes('clt') || 
+    p.contrato?.toLowerCase().includes('clt')
+  ).length;
+  const pjCount = professionals.filter(p => 
+    p.tipo_contrato?.toLowerCase().includes('pj') || 
+    p.contrato?.toLowerCase().includes('pj')
+  ).length;
   
-  const technologies = {
-    java: professionals.filter(p => p.java && p.java !== 'Sem conhecimento').length,
-    javascript: professionals.filter(p => p.javascript && p.javascript !== 'Sem conhecimento').length,
-    python: professionals.filter(p => p.python && p.python !== 'Sem conhecimento').length,
-    react: professionals.filter(p => p.react && p.react !== 'Sem conhecimento').length,
-    typescript: professionals.filter(p => p.typescript && p.typescript !== 'Sem conhecimento').length,
+  // Análise de senioridade
+  const seniorityCount = {
+    junior: professionals.filter(p => 
+      p.proficiencia_cargo?.toLowerCase().includes('junior') ||
+      p.senioridade?.toLowerCase().includes('junior')
+    ).length,
+    pleno: professionals.filter(p => 
+      p.proficiencia_cargo?.toLowerCase().includes('pleno') ||
+      p.senioridade?.toLowerCase().includes('pleno')
+    ).length,
+    senior: professionals.filter(p => 
+      p.proficiencia_cargo?.toLowerCase().includes('senior') ||
+      p.senioridade?.toLowerCase().includes('senior')
+    ).length
   };
-
-  const topTech = Object.entries(technologies)
+  
+  // Análise de tecnologias
+  const techCount = {
+    javascript: professionals.filter(p => p.javascript === 'true').length,
+    java: professionals.filter(p => p.java === 'true').length,
+    python: professionals.filter(p => p.python === 'true').length,
+    react: professionals.filter(p => p.react === 'true').length,
+    typescript: professionals.filter(p => p.typescript === 'true').length,
+    mysql: professionals.filter(p => 
+      p.banco_dados?.toLowerCase().includes('mysql') ||
+      p.database?.toLowerCase().includes('mysql')
+    ).length
+  };
+  
+  // Encontrar tecnologia mais comum
+  const mostCommonTech = Object.entries(techCount)
+    .sort(([,a], [,b]) => b - a)[0];
+  
+  // Encontrar senioridade predominante
+  const mostCommonSeniority = Object.entries(seniorityCount)
     .sort(([,a], [,b]) => b - a)[0];
 
-  return {
-    total,
-    clt,
-    pj,
-    cltPercent: Math.round((clt / total) * 100),
-    pjPercent: Math.round((pj / total) * 100),
-    technologies,
-    topTech: { name: topTech[0], count: topTech[1] },
-    topSeniority: { name: 'Pleno', count: Math.round(total * 0.4) }, // Estimativa
-  };
+  // Análise específica da pergunta
+  let specificInsights = '';
+  const questionLower = question.toLowerCase();
+  
+  if (questionLower.includes('mysql')) {
+    specificInsights += `\nMySQL: ${techCount.mysql} profissionais têm experiência com MySQL`;
+  }
+  
+  if (questionLower.includes('react')) {
+    specificInsights += `\nReact: ${techCount.react} profissionais são experientes em React`;
+  }
+  
+  if (questionLower.includes('python')) {
+    specificInsights += `\nPython: ${techCount.python} profissionais trabalham com Python`;
+  }
+  
+  if (questionLower.includes('java')) {
+    specificInsights += `\nJava: ${techCount.java} profissionais têm conhecimento em Java`;
+  }
+  
+  if (questionLower.includes('javascript')) {
+    specificInsights += `\nJavaScript: ${techCount.javascript} profissionais dominam JavaScript`;
+  }
+
+  // Respostas específicas baseadas na pergunta
+  if (questionLower.includes('quantos') && (questionLower.includes('mysql') || questionLower.includes('react') || questionLower.includes('python'))) {
+    let counts = [];
+    if (questionLower.includes('mysql')) counts.push(`MySQL: ${techCount.mysql} profissionais`);
+    if (questionLower.includes('react')) counts.push(`React: ${techCount.react} profissionais`);
+    if (questionLower.includes('python')) counts.push(`Python: ${techCount.python} profissionais`);
+    
+    return `🔍 Análise Offline Inteligente
+
+Pergunta: "${question}"
+
+📊 Dados da HITSS (${totalProfessionals} profissionais):
+
+${counts.join('\n')}
+
+📈 Estatísticas Gerais:
+• Colaboradores CLT: ${cltCount} (${Math.round(cltCount/totalProfessionals*100)}%)
+• Colaboradores PJ: ${pjCount} (${Math.round(pjCount/totalProfessionals*100)}%)
+• Tecnologia mais comum: ${mostCommonTech[0]} (${mostCommonTech[1]} profissionais)
+• Senioridade predominante: ${mostCommonSeniority[0]} (${mostCommonSeniority[1]} profissionais)
+
+---
+Análise offline realizada em 0ms`;
+  }
+
+  // Resposta padrão com dados reais
+  return `🔍 Análise Offline Inteligente
+
+Pergunta: "${question}"
+
+📊 Dados Analisados: ${totalProfessionals} profissionais da HITSS
+
+📈 Estatísticas Principais:
+• Colaboradores CLT: ${cltCount} (${Math.round(cltCount/totalProfessionals*100)}%)
+• Colaboradores PJ: ${pjCount} (${Math.round(pjCount/totalProfessionals*100)}%)
+• Tecnologia mais comum: ${mostCommonTech[0]} (${mostCommonTech[1]} profissionais)
+• Senioridade predominante: ${mostCommonSeniority[0]} (${mostCommonSeniority[1]} profissionais)
+
+🔍 Insights Baseados na Pergunta:${specificInsights || '\n• Análise geral dos dados disponíveis'}
+
+🛠️ Stack Tecnológico:
+• JavaScript: ${techCount.javascript} profissionais
+• Java: ${techCount.java} profissionais  
+• Python: ${techCount.python} profissionais
+• React: ${techCount.react} profissionais
+• TypeScript: ${techCount.typescript} profissionais
+• MySQL: ${techCount.mysql} profissionais
+
+---
+Análise offline realizada em 0ms`;
 } 

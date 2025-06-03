@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion as m } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend, Cell } from 'recharts'; // Adicionado BarChart, Bar, XAxis, YAxis, CartesianGrid
