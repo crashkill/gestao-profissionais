@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, FileSpreadsheet, Check, AlertCircle, Download } from 'lucide-react';
@@ -6,7 +5,7 @@ import * as XLSX from 'xlsx';
 import { Professional } from '../types/Professional';
 
 interface ExcelImportProps {
-  onImport: (professionals: Professional[]) => void;
+  onImport: (professionals: Omit<Professional, 'id' | 'created_at'>[]) => void;
   onBack: () => void;
 }
 
@@ -38,6 +37,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
   }, []);
 
   const handleFile = (file: File) => {
+    console.log('[ExcelImport] Iniciando processamento do arquivo:', file.name);
     setError('');
     
     if (!file.name.endsWith('.xlsx')) {
@@ -48,11 +48,14 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
+        console.log('[ExcelImport] Arquivo lido com sucesso. Processando...');
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        console.log(`[ExcelImport] ${jsonData.length} linhas encontradas no arquivo.`);
 
         if (jsonData.length === 0) {
           setError('O arquivo Excel está vazio');
@@ -60,20 +63,31 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
         }
 
         // Validate required columns
-        const requiredColumns = ['Nome', 'Email', 'Area', 'Skill Principal', 'Disponivel para Compartilhamento', 'Percentual de Compartilhamento'];
+        const requiredColumns = ['Nome Completo', 'Email', 'Área de Atuação', 'Skill Principal', 'Nível de Experiência'];
         const firstRow = jsonData[0] as any;
-        const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+        const actualColumns = Object.keys(firstRow);
+        console.log('[ExcelImport] Colunas encontradas no arquivo:', actualColumns);
+
+        const missingColumns = requiredColumns.filter(col => !actualColumns.includes(col));
         
         if (missingColumns.length > 0) {
-          setError(`Colunas obrigatórias faltando: ${missingColumns.join(', ')}`);
+          const errorMessage = `Colunas obrigatórias faltando: ${missingColumns.join(', ')}`;
+          console.error('[ExcelImport] Erro de validação:', errorMessage);
+          setError(errorMessage);
           return;
         }
 
+        console.log('[ExcelImport] Validação de colunas passou. Mostrando prévia.');
         setPreviewData(jsonData);
         setShowPreview(true);
       } catch (err) {
+        console.error('[ExcelImport] Erro no processamento do Excel:', err);
         setError('Erro ao processar o arquivo Excel');
       }
+    };
+    reader.onerror = (err) => {
+        console.error('[ExcelImport] Erro na leitura do arquivo:', err);
+        setError('Não foi possível ler o arquivo.');
     };
     reader.readAsArrayBuffer(file);
   };
@@ -86,26 +100,26 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
 
   const generateTemplate = () => {
     const headers = [
-      'Nome',
+      'Nome Completo',
       'Email',
-      'Area',
+      'Área de Atuação',
       'Skill Principal',
-      'Disponivel para Compartilhamento',
+      'Nível de Experiência',
+      'Disponível para Compartilhamento',
       'Percentual de Compartilhamento',
-      'Outras Skills',
-      'Nivel'
+      'Outras Skills'
     ];
 
     const exampleData = [
       {
-        'Nome': 'João Silva',
+        'Nome Completo': 'João Silva',
         'Email': 'joao.silva@exemplo.com',
-        'Area': 'Desenvolvedor Frontend',
+        'Área de Atuação': 'Desenvolvedor Frontend',
         'Skill Principal': 'React',
-        'Disponivel para Compartilhamento': 'Sim',
+        'Nível de Experiência': 'Pleno',
+        'Disponível para Compartilhamento': 'Sim',
         'Percentual de Compartilhamento': '75',
-        'Outras Skills': 'JavaScript, TypeScript, HTML, CSS',
-        'Nivel': 'Pleno'
+        'Outras Skills': 'JavaScript, TypeScript, HTML, CSS'
       }
     ];
 
@@ -126,10 +140,13 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
   };
 
   const processImport = () => {
-    const professionals: Professional[] = previewData.map((row: any, index) => ({
-      id: (Date.now() + index).toString(),
-      nome_completo: row.Nome || '',
+    console.log(`[ExcelImport] Iniciando importação de ${previewData.length} profissionais.`);
+    const professionalsToImport: Omit<Professional, 'id' | 'created_at'>[] = previewData.map((row: any) => ({
+      nome_completo: row['Nome Completo'] || '',
       email: row.Email || '',
+      area_atuacao: row['Área de Atuação'] || null,
+      skill_principal: row['Skill Principal'] || null,
+      nivel_experiencia: row['Nível de Experiência'] || null,
       regime: null,
       local_alocacao: null,
       proficiencia_cargo: null,
@@ -152,13 +169,13 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
       azure: null,
       gcp: null,
       outras_tecnologias: row['Outras Skills'] || null,
-      created_at: new Date().toISOString(),
       hora_ultima_modificacao: new Date().toISOString(),
-      disponivel_compartilhamento: row['Disponivel para Compartilhamento']?.toLowerCase() === 'sim',
+      disponivel_compartilhamento: row['Disponível para Compartilhamento']?.toLowerCase() === 'sim',
       percentual_compartilhamento: row['Percentual de Compartilhamento'] as '100' | '75' | '50' | '25' | null
     }));
 
-    onImport(professionals);
+    onImport(professionalsToImport);
+    console.log('[ExcelImport] Importação concluída. Mostrando sucesso e redirecionando.');
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
@@ -166,7 +183,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
     }, 2000);
   };
 
-/*
   if (showSuccess) {
     return (
       <motion.div
@@ -191,9 +207,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
       </motion.div>
     );
   }
-*/
 
-/*
   if (showPreview) {
     return (
       <motion.div
@@ -260,7 +274,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
       </motion.div>
     );
   }
-*/
 
   return (
     <motion.div

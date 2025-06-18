@@ -3,12 +3,7 @@ import { motion as m } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend, Cell } from 'recharts'; // Adicionado BarChart, Bar, XAxis, YAxis, CartesianGrid
 import { Users, UserPlus, Upload, BarChart3 } from 'lucide-react'; // Adicionado BarChart3 para "Linguagens Diferentes"
 import { Professional } from '../types/Professional';
-import { createClient, SupabaseClient } from '@supabase/supabase-js'; // Importar Supabase
-
-// Configurações do Supabase (repetido aqui para o exemplo, idealmente seria centralizado)
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { supabase } from '../lib/supabaseClient'; // Importar instância Supabase
 
 interface DashboardProps {
   professionals: Professional[]; // Ainda usado para "Total de Profissionais" e "Áreas de Atuação"

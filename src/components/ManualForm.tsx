@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, X, Check } from 'lucide-react';
 import { Professional, AREAS, MAIN_SKILLS, OTHER_SKILLS } from '../types/Professional';
 
 interface ManualFormProps {
-  onSubmit: (professional: Professional) => void;
+  onSubmit: (professional: Omit<Professional, 'id' | 'created_at'>) => void;
   onBack: () => void;
 }
 
@@ -15,6 +14,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
     email: '',
     area: '',
     mainSkill: '',
+    level: 'Júnior' as 'Júnior' | 'Pleno' | 'Sênior',
     otherSkills: [] as Array<{ name: string; level: 'Júnior' | 'Pleno' | 'Sênior' }>,
     disponivel_compartilhamento: false,
     percentual_compartilhamento: null as '100' | '75' | '50' | '25' | null
@@ -52,10 +52,12 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
       return;
     }
 
-    const professional: Professional = {
-      id: '',
+    const professional: Omit<Professional, 'id' | 'created_at'> = {
       email: formData.email,
       nome_completo: formData.name,
+      area_atuacao: formData.area,
+      skill_principal: formData.mainSkill,
+      nivel_experiencia: formData.level,
       hora_ultima_modificacao: new Date().toISOString(),
       regime: null,
       local_alocacao: null,
@@ -79,7 +81,6 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
       azure: null,
       gcp: null,
       outras_tecnologias: null,
-      created_at: new Date().toISOString(),
       disponivel_compartilhamento: formData.disponivel_compartilhamento,
       percentual_compartilhamento: formData.disponivel_compartilhamento ? formData.percentual_compartilhamento : null
     };
@@ -211,9 +212,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
               className="w-full p-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="" className="bg-slate-800">Selecione uma área</option>
-              {AREAS.map((area) => (
-                <option key={area} value={area} className="bg-slate-800">{area}</option>
-              ))}
+              {AREAS.map(a => <option key={a} value={a} className="bg-slate-800">{a}</option>)}
             </select>
           </div>
 
@@ -229,9 +228,23 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
               required
             >
               <option value="" className="bg-slate-800">Selecione a linguagem principal</option>
-              {MAIN_SKILLS.map((skill) => (
-                <option key={skill} value={skill} className="bg-slate-800">{skill}</option>
-              ))}
+              {MAIN_SKILLS.map(s => <option key={s} value={s} className="bg-slate-800">{s}</option>)}
+            </select>
+          </div>
+
+          {/* Nível de Experiência */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Nível de Experiência
+            </label>
+            <select
+              value={formData.level}
+              onChange={(e) => setFormData({ ...formData, level: e.target.value as 'Júnior' | 'Pleno' | 'Sênior' })}
+              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Júnior" className="bg-slate-800">Júnior</option>
+              <option value="Pleno" className="bg-slate-800">Pleno</option>
+              <option value="Sênior" className="bg-slate-800">Sênior</option>
             </select>
           </div>
 

@@ -5,14 +5,8 @@ import ManualForm from '../components/ManualForm';
 import ExcelImport from '../components/ExcelImport';
 import WebGLBackground from '../components/WebGLBackground';
 import { Professional } from '../types/Professional';
-import { createClient, SupabaseClient } from '@supabase/supabase-js'; // Importar Supabase
+import { supabase } from '../lib/supabaseClient'; // Importar instância Supabase
 import { AIChat } from '../components/AIChat';
-
-// Configurações do Supabase
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'dashboard' | 'manual' | 'excel'>('dashboard');
@@ -48,28 +42,44 @@ const Index = () => {
     fetchProfessionals();
   }, []); // Executa apenas uma vez na montagem do componente
 
-  // As funções saveProfessionals, addProfessional, addMultipleProfessionals
-  // precisarão ser adaptadas para interagir com o Supabase se necessário.
-  // Por enquanto, elas não afetarão a busca inicial de dados.
-  const saveProfessionals = (newProfessionals: Professional[]) => {
-    // Lógica para salvar no Supabase (a ser implementada se necessário)
-    console.log("saveProfessionals chamada, mas não implementada para Supabase ainda.", newProfessionals);
-    setProfessionals(newProfessionals); // Atualiza o estado localmente
-    // localStorage.setItem('techTalentRegistry', JSON.stringify(newProfessionals)); // Remover ou adaptar
+  const addProfessional = async (professional: Omit<Professional, 'id' | 'created_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('colaboradores')
+        .insert([professional])
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setProfessionals(prev => [...prev, ...data as Professional[]]);
+      }
+    } catch (err: any) {
+      console.error("Erro ao adicionar profissional:", err);
+      setError(err.message || 'Falha ao salvar profissional.');
+    }
   };
 
-  const addProfessional = (professional: Professional) => {
-    // Lógica para adicionar no Supabase (a ser implementada se necessário)
-    console.log("addProfessional chamada, mas não implementada para Supabase ainda.", professional);
-    const updated = [...professionals, { ...professional, id: professional.id || Date.now().toString() }]; // Garante um ID
-    saveProfessionals(updated);
-  };
+  const addMultipleProfessionals = async (newProfessionals: Omit<Professional, 'id' | 'created_at'>[]) => {
+    try {
+      const { data, error } = await supabase
+        .from('colaboradores')
+        .insert(newProfessionals)
+        .select();
 
-  const addMultipleProfessionals = (newProfessionals: Professional[]) => {
-    // Lógica para adicionar múltiplos no Supabase (a ser implementada se necessário)
-    console.log("addMultipleProfessionals chamada, mas não implementada para Supabase ainda.", newProfessionals);
-    const updated = [...professionals, ...newProfessionals.map(p => ({ ...p, id: p.id || Date.now().toString() + Math.random() }))];
-    saveProfessionals(updated);
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setProfessionals(prev => [...prev, ...data as Professional[]]);
+      }
+    } catch (err: any) {
+      console.error("Erro ao adicionar múltiplos profissionais:", err);
+      setError(err.message || 'Falha ao salvar profissionais.');
+    }
   };
 
   // Renderização condicional baseada no estado de carregamento e erro

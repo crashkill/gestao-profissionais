@@ -1,7 +1,9 @@
-
 export interface Professional {
   id: string; // UUID do Supabase
   email: string | null;
+  area_atuacao: string | null;
+  skill_principal: string | null;
+  nivel_experiencia: string | null;
   hora_ultima_modificacao: string | null; // ISO date string
   nome_completo: string | null;
   regime: string | null;
