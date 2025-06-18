@@ -81,6 +81,17 @@ VITE_TOGETHER_API_KEY=sua_together_key_aqui
 3. Adicione cada variável individualmente
 4. O deploy será feito automaticamente
 
+### 4. Gerenciamento de Segredos com Doppler (Recomendado)
+
+Para centralizar variáveis de ambiente de forma segura e evitar vazamentos, consulte o guia completo em [`DOPPLER.md`](./DOPPLER.md). Ele explica como:
+
+- Instalar a CLI do Doppler
+- Criar projetos e ambientes
+- Injetar segredos localmente (`doppler run -- npm run dev`)
+- Integrar com GitHub Actions para CI/CD
+
+> **Sugerido** para equipes que precisam escalar o gerenciamento de segredos sem esforço.
+
 ## 🚀 Deploy
 
 O sistema tem **CI/CD automático**:
