@@ -62,7 +62,11 @@ export const MAIN_SKILLS = [
   'Angular',
   'Node.js',
   '.NET',
-  'Spring Boot'
+  'Spring Boot',
+  'Gerencia de Projetos',
+  'Administração de Projetos',
+  'Linguagem R',
+  'Skalla'
 ];
 
 export const OTHER_SKILLS = [
@@ -89,5 +93,9 @@ export const OTHER_SKILLS = [
   'Jenkins',
   'Terraform',
   'Figma',
-  'Adobe XD'
+  'Adobe XD',
+  'Gerencia de Projetos',
+  'Administração de Projetos',
+  'Linguagem R',
+  'Skalla'
 ];
