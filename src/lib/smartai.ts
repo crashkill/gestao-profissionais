@@ -85,55 +85,86 @@ Responda sempre em português brasileiro de forma clara e direta.`
 // Análise offline inteligente com dados reais
 function generateSmartOfflineAnalysis(question: string, professionals: any[]): string {
   console.log('🔍 [ANÁLISE OFFLINE] Processando dados reais dos profissionais...');
+  console.log('🔍 [DEBUG] Estrutura do primeiro profissional:', JSON.stringify(professionals[0], null, 2));
+  
+  // Debug: verificar valores únicos dos campos importantes
+  const regimeValues = [...new Set(professionals.map(p => p.regime).filter(Boolean))];
+  const proficienciaValues = [...new Set(professionals.map(p => p.proficiencia_cargo).filter(Boolean))];
+  console.log('🔍 [DEBUG] Valores únicos de regime:', regimeValues);
+  console.log('🔍 [DEBUG] Valores únicos de proficiencia_cargo:', proficienciaValues);
   
   // Estatísticas reais baseadas nos dados
   const totalProfessionals = professionals.length;
   
-  // Análise de contratos (CLT vs PJ)
+  // Análise de contratos (CLT vs PJ) - campo 'regime'
   const cltCount = professionals.filter(p => 
-    p.tipo_contrato?.toLowerCase().includes('clt') || 
-    p.contrato?.toLowerCase().includes('clt')
+    p.regime?.toLowerCase().includes('clt')
   ).length;
   const pjCount = professionals.filter(p => 
-    p.tipo_contrato?.toLowerCase().includes('pj') || 
-    p.contrato?.toLowerCase().includes('pj')
+    p.regime?.toLowerCase().includes('pj')
   ).length;
   
-  // Análise de senioridade
+  // Análise de senioridade - campo 'proficiencia_cargo'
   const seniorityCount = {
     junior: professionals.filter(p => 
       p.proficiencia_cargo?.toLowerCase().includes('junior') ||
-      p.senioridade?.toLowerCase().includes('junior')
+      p.proficiencia_cargo?.toLowerCase().includes('júnior')
     ).length,
     pleno: professionals.filter(p => 
-      p.proficiencia_cargo?.toLowerCase().includes('pleno') ||
-      p.senioridade?.toLowerCase().includes('pleno')
+      p.proficiencia_cargo?.toLowerCase().includes('pleno')
     ).length,
     senior: professionals.filter(p => 
       p.proficiencia_cargo?.toLowerCase().includes('senior') ||
-      p.senioridade?.toLowerCase().includes('senior')
+      p.proficiencia_cargo?.toLowerCase().includes('sênior')
     ).length
   };
   
-  // Análise de tecnologias
+  // Análise de tecnologias - campos de string
   const techCount = {
-    javascript: professionals.filter(p => p.javascript === 'true').length,
-    java: professionals.filter(p => p.java === 'true').length,
-    python: professionals.filter(p => p.python === 'true').length,
-    react: professionals.filter(p => p.react === 'true').length,
-    typescript: professionals.filter(p => p.typescript === 'true').length,
+    javascript: professionals.filter(p => 
+      p.javascript && 
+      p.javascript.toLowerCase() !== 'sem conhecimento' && 
+      p.javascript.toLowerCase() !== 'null'
+    ).length,
+    java: professionals.filter(p => 
+      p.java && 
+      p.java.toLowerCase() !== 'sem conhecimento' && 
+      p.java.toLowerCase() !== 'null'
+    ).length,
+    python: professionals.filter(p => 
+      p.python && 
+      p.python.toLowerCase() !== 'sem conhecimento' && 
+      p.python.toLowerCase() !== 'null'
+    ).length,
+    react: professionals.filter(p => 
+      p.react && 
+      p.react.toLowerCase() !== 'sem conhecimento' && 
+      p.react.toLowerCase() !== 'null'
+    ).length,
+    typescript: professionals.filter(p => 
+      p.typescript && 
+      p.typescript.toLowerCase() !== 'sem conhecimento' && 
+      p.typescript.toLowerCase() !== 'null'
+    ).length,
     mysql: professionals.filter(p => 
-      p.banco_dados?.toLowerCase().includes('mysql') ||
-      p.database?.toLowerCase().includes('mysql')
+      p.mysql && 
+      p.mysql.toLowerCase() !== 'sem conhecimento' && 
+      p.mysql.toLowerCase() !== 'null'
     ).length
   };
+  
+  console.log('🔍 [DEBUG] Contagens de tecnologia:', techCount);
+  console.log('🔍 [DEBUG] Contagens de contrato: CLT:', cltCount, 'PJ:', pjCount);
+  console.log('🔍 [DEBUG] Contagens de senioridade:', seniorityCount);
   
   // Encontrar tecnologia mais comum
   const mostCommonTech = Object.entries(techCount)
+    .filter(([, count]) => count > 0) // Apenas tecnologias com pelo menos 1 profissional
     .sort(([,a], [,b]) => b - a)[0];
   
   // Encontrar senioridade predominante
   const mostCommonSeniority = Object.entries(seniorityCount)
+    .filter(([, count]) => count > 0) // Apenas senioridades com pelo menos 1 profissional
     .sort(([,a], [,b]) => b - a)[0];
 
   // Análise específica da pergunta
@@ -159,6 +190,34 @@ function generateSmartOfflineAnalysis(question: string, professionals: any[]): s
   if (questionLower.includes('javascript')) {
     specificInsights += `\nJavaScript: ${techCount.javascript} profissionais dominam JavaScript`;
   }
+  
+  // Resposta específica para senioridade
+  if (questionLower.includes('senior') || questionLower.includes('sênior')) {
+    const seniorProfessionals = professionals.filter(p => 
+      p.proficiencia_cargo?.toLowerCase().includes('senior') ||
+      p.proficiencia_cargo?.toLowerCase().includes('sênior')
+    );
+    
+    return `🔍 Análise Offline Inteligente
+
+Pergunta: "${question}"
+
+📊 Dados da HITSS (${totalProfessionals} profissionais):
+
+👨‍💼 Profissionais Sêniores: ${seniorProfessionals.length}
+
+📋 Lista de Sêniores:
+${seniorProfessionals.length > 0 ? 
+  seniorProfessionals.slice(0, 10).map(p => `• ${p.nome_completo || 'Nome não informado'} - ${p.proficiencia_cargo}`).join('\n') + 
+  (seniorProfessionals.length > 10 ? `\n... e mais ${seniorProfessionals.length - 10} profissionais` : '')
+  : '• Nenhum profissional com nível sênior encontrado'}
+
+📈 Estatísticas Gerais:
+• Colaboradores CLT: ${cltCount} (${Math.round(cltCount/totalProfessionals*100)}%)
+• Colaboradores PJ: ${pjCount} (${Math.round(pjCount/totalProfessionals*100)}%)
+• Tecnologia mais comum: ${mostCommonTech ? `${mostCommonTech[0]} (${mostCommonTech[1]} profissionais)` : 'Nenhuma tecnologia identificada'}
+• Senioridade predominante: ${mostCommonSeniority ? `${mostCommonSeniority[0]} (${mostCommonSeniority[1]} profissionais)` : 'Dados de senioridade não disponíveis'}`;
+  }
 
   // Respostas específicas baseadas na pergunta
   if (questionLower.includes('quantos') && (questionLower.includes('mysql') || questionLower.includes('react') || questionLower.includes('python'))) {
@@ -178,11 +237,8 @@ ${counts.join('\n')}
 📈 Estatísticas Gerais:
 • Colaboradores CLT: ${cltCount} (${Math.round(cltCount/totalProfessionals*100)}%)
 • Colaboradores PJ: ${pjCount} (${Math.round(pjCount/totalProfessionals*100)}%)
-• Tecnologia mais comum: ${mostCommonTech[0]} (${mostCommonTech[1]} profissionais)
-• Senioridade predominante: ${mostCommonSeniority[0]} (${mostCommonSeniority[1]} profissionais)
-
----
-Análise offline realizada em 0ms`;
+• Tecnologia mais comum: ${mostCommonTech ? `${mostCommonTech[0]} (${mostCommonTech[1]} profissionais)` : 'Nenhuma tecnologia identificada'}
+• Senioridade predominante: ${mostCommonSeniority ? `${mostCommonSeniority[0]} (${mostCommonSeniority[1]} profissionais)` : 'Dados de senioridade não disponíveis'}`;
   }
 
   // Resposta padrão com dados reais
@@ -195,8 +251,8 @@ Pergunta: "${question}"
 📈 Estatísticas Principais:
 • Colaboradores CLT: ${cltCount} (${Math.round(cltCount/totalProfessionals*100)}%)
 • Colaboradores PJ: ${pjCount} (${Math.round(pjCount/totalProfessionals*100)}%)
-• Tecnologia mais comum: ${mostCommonTech[0]} (${mostCommonTech[1]} profissionais)
-• Senioridade predominante: ${mostCommonSeniority[0]} (${mostCommonSeniority[1]} profissionais)
+• Tecnologia mais comum: ${mostCommonTech ? `${mostCommonTech[0]} (${mostCommonTech[1]} profissionais)` : 'Nenhuma tecnologia identificada'}
+• Senioridade predominante: ${mostCommonSeniority ? `${mostCommonSeniority[0]} (${mostCommonSeniority[1]} profissionais)` : 'Dados de senioridade não disponíveis'}
 
 🔍 Insights Baseados na Pergunta:${specificInsights || '\n• Análise geral dos dados disponíveis'}
 
@@ -206,8 +262,5 @@ Pergunta: "${question}"
 • Python: ${techCount.python} profissionais
 • React: ${techCount.react} profissionais
 • TypeScript: ${techCount.typescript} profissionais
-• MySQL: ${techCount.mysql} profissionais
-
----
-Análise offline realizada em 0ms`;
+• MySQL: ${techCount.mysql} profissionais`;
 } 
