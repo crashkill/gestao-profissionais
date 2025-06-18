@@ -3,8 +3,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 
 // Configurações
-const EXCEL_FILE_PATH = '/Users/fabriciocardosodelima/Desktop/talent-sphere-registry/Cadastro Colaboradores - FSW São Paulo(1-97) - Detalhada.xlsx';
-const EXCEL_SHEET_NAME = 'Resposta';
+const EXCEL_FILE_PATH = '/Users/fabriciocardosodelima/Desktop/talent-sphere-registry/public/Cadastro Colaboradores - FSW São Paulo(1-110).xlsx';
+const EXCEL_SHEET_NAME = 'Sheet1';
 
 const SUPABASE_URL = 'https://pwksgdjjkryqryqrvyja.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3a3NnZGpqa3J5cXJ5cXJ2eWphIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODU2MDA0OCwiZXhwIjoyMDY0MTM2MDQ4fQ.FaNXM6jMHLAa-e6A8PQlZY9wxv9XrweZa4vMCYNhdk4';
