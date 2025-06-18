@@ -36,6 +36,9 @@ export interface Professional {
   windows: string | null;
   raspberry_pi: string | null;
   arduino: string | null;
+  gerencia_projetos: string | null;
+  administracao_projetos: string | null;
+  analise_requisitos: string | null;
   created_at: string | null; // ISO date string
   disponivel_compartilhamento: boolean | null;
   percentual_compartilhamento: '100' | '75' | '50' | '25' | null;
@@ -157,5 +160,8 @@ export const SKILL_COLUMN_MAP: Record<string, string> = {
   'Windows': 'windows',
   'Raspberry PI': 'raspberry_pi',
   'Raspiberry PI': 'raspberry_pi',
-  'Arduino': 'arduino'
+  'Arduino': 'arduino',
+  'Gerencia de Projetos': 'gerencia_projetos',
+  'Administração de Projetos': 'administracao_projetos',
+  'Analise de Requisitos': 'analise_requisitos'
 };
