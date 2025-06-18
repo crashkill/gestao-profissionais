@@ -280,9 +280,9 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="bg-slate-800/40 backdrop-blur-md rounded-2xl p-8 border border-slate-700/50"
+        className="bg-slate-800/40 backdrop-blur-md rounded-2xl p-6 border border-slate-700/50"
       >
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+        <h2 className="text-2xl font-bold text-white mb-4 text-center">
           {selectedSkill ? `Distribuição de Proficiência para ${selectedSkill}` : 'Visão Geral de Skills por Profissionais'}
         </h2>
         
@@ -297,12 +297,19 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
           </div>
         )}
         {!loadingChart && !errorChart && !selectedSkill && mainSkillsChartData.length > 0 && (
-          <div className="h-96">
+          <div className="h-[600px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mainSkillsChartData} layout="vertical" margin={{ top: 5, right: 30, left: 50, bottom: 5 }}>
+              <BarChart data={mainSkillsChartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#94a3b8" />
                 <XAxis type="number" stroke="#94a3b8" />
-                <YAxis type="category" dataKey="name" stroke="#94a3b8" width={100} interval={0} />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  stroke="#94a3b8" 
+                  width={120} 
+                  interval={0} 
+                  tick={{ fontSize: 12 }}
+                />
                 <Tooltip 
                   cursor={{ fill: 'rgba(255,255,255,0.1)' }}
                   contentStyle={{ backgroundColor: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '0.5rem' }}
@@ -310,7 +317,7 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
                   itemStyle={{ color: '#cbd5e1' }}
                 />
                 <Legend wrapperStyle={{ color: '#fff', paddingTop: '10px' }} />
-                <Bar dataKey="total" name="Total de Profissionais" fill="#3b82f6" radius={[0, 5, 5, 0]} barSize={20}>
+                <Bar dataKey="total" name="Total de Profissionais" fill="#3b82f6" radius={[0, 5, 5, 0]} barSize={18}>
                   {mainSkillsChartData.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
