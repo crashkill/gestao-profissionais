@@ -43,7 +43,10 @@ export const AREAS = [
   'Scrum Master',
   'UI/UX Designer',
   'Data Scientist',
-  'Mobile Developer'
+  'Mobile Developer',
+  'Gestão de Projetos',
+  'Recrutamento & Seleção',
+  'Análise de Requisitos'
 ];
 
 export const MAIN_SKILLS = [
