@@ -297,16 +297,16 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
           </div>
         )}
         {!loadingChart && !errorChart && !selectedSkill && mainSkillsChartData.length > 0 && (
-          <div className="h-[600px]">
+          <div className="h-[800px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mainSkillsChartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+              <BarChart data={mainSkillsChartData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#94a3b8" />
                 <XAxis type="number" stroke="#94a3b8" />
                 <YAxis 
                   type="category" 
                   dataKey="name" 
                   stroke="#94a3b8" 
-                  width={120} 
+                  width={140} 
                   interval={0} 
                   tick={{ fontSize: 12 }}
                 />
