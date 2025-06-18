@@ -66,7 +66,8 @@ export const MAIN_SKILLS = [
   'Gerencia de Projetos',
   'Administração de Projetos',
   'Linguagem R',
-  'Skalla'
+  'Skalla',
+  'Analise de Requisitos'
 ];
 
 export const OTHER_SKILLS = [
@@ -97,5 +98,6 @@ export const OTHER_SKILLS = [
   'Gerencia de Projetos',
   'Administração de Projetos',
   'Linguagem R',
-  'Skalla'
+  'Skalla',
+  'Analise de Requisitos'
 ];
