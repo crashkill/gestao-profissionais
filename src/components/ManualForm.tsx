@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, X, Check } from 'lucide-react';
-import { Professional, AREAS, MAIN_SKILLS, OTHER_SKILLS } from '../types/Professional';
+import { Professional, AREAS, MAIN_SKILLS, OTHER_SKILLS, SKILL_COLUMN_MAP } from '../types/Professional';
 
 interface ManualFormProps {
   onSubmit: (professional: Omit<Professional, 'id' | 'created_at'>) => void;
@@ -59,7 +59,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
       skill_principal: formData.mainSkill,
       nivel_experiencia: formData.level,
       hora_ultima_modificacao: new Date().toISOString(),
-      regime: null,
+      regime: 'CLT',
       local_alocacao: null,
       proficiencia_cargo: null,
       java: null,
@@ -81,9 +81,35 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
       azure: null,
       gcp: null,
       outras_tecnologias: null,
+      android: null,
+      cobol: null,
+      linguagem_r: null,
+      linguagem_c: null,
+      linguagem_cpp: null,
+      windows: null,
+      raspberry_pi: null,
+      arduino: null,
       disponivel_compartilhamento: formData.disponivel_compartilhamento,
       percentual_compartilhamento: formData.disponivel_compartilhamento ? formData.percentual_compartilhamento : null
     };
+
+    const mainSkillColumn = SKILL_COLUMN_MAP[formData.mainSkill];
+    if (mainSkillColumn && mainSkillColumn in professional) {
+      (professional as any)[mainSkillColumn] = formData.level;
+    }
+
+    formData.otherSkills.forEach(skill => {
+      const skillColumn = SKILL_COLUMN_MAP[skill.name];
+      if (skillColumn && skillColumn in professional) {
+        (professional as any)[skillColumn] = skill.level;
+      } else {
+        const currentOtherTechs = professional.outras_tecnologias || '';
+        const newTech = `${skill.name} - ${skill.level}`;
+        professional.outras_tecnologias = currentOtherTechs 
+          ? `${currentOtherTechs}, ${newTech}`
+          : newTech;
+      }
+    });
 
     onSubmit(professional);
 
