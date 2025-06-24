@@ -3,7 +3,7 @@ import { motion as m } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend, Cell } from 'recharts'; // Adicionado BarChart, Bar, XAxis, YAxis, CartesianGrid
 import { Users, UserPlus, Upload, BarChart3 } from 'lucide-react'; // Adicionado BarChart3 para "Linguagens Diferentes"
 import { Professional } from '../types/Professional';
-import { supabase } from '../lib/supabaseClient'; // Importar instância Supabase
+import { supabase, executeSupabaseQuery } from '../lib/supabaseClient'; // Importar instância Supabase
 
 interface DashboardProps {
   professionals: Professional[]; // Ainda usado para "Total de Profissionais" e "Áreas de Atuação"
@@ -72,11 +72,15 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
       setLoadingChart(true);
       setErrorChart(null);
       try {
-        const { data, error } = await supabase.rpc('get_skill_proficiency_distribution');
+        const data = await executeSupabaseQuery(async (client) => {
+          const { data, error } = await client.rpc('get_skill_proficiency_distribution');
 
-        if (error) {
-          throw error;
-        }
+          if (error) {
+            throw error;
+          }
+
+          return data;
+        });
 
         if (data) {
           const rawData = data as SkillProficiencyEntry[];
@@ -143,11 +147,14 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
     setLoadingProfessionalsList(true);
     setProfessionalsList([]); // Limpa lista anterior
     try {
-      const { data, error } = await supabase.rpc('get_professionals_by_skill_and_proficiency', {
-        target_skill_name: selectedSkill,
-        target_proficiency_level: proficiencyLevel,
+      const data = await executeSupabaseQuery(async (client) => {
+        const { data, error } = await client.rpc('get_professionals_by_skill_and_proficiency', {
+          target_skill_name: selectedSkill,
+          target_proficiency_level: proficiencyLevel,
+        });
+        if (error) throw error;
+        return data;
       });
-      if (error) throw error;
       setProfessionalsList(data as ProfessionalDetail[]);
     } catch (err: any) {
       console.error('Erro ao buscar lista de profissionais:', err);
@@ -172,13 +179,17 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
       console.log('[Dashboard] Iniciando busca por contagens de tipos de contrato...'); // Log 1
       setLoadingContractCounts(true);
       try {
-        const { data, error } = await supabase.rpc('get_contract_types_count');
-        
-        console.log('[Dashboard] Dados recebidos da RPC:', data); // Log 2
-        if (error) {
-          console.error('[Dashboard] Erro da RPC:', error); // Log 3
-          throw error; // Joga o erro para ser pego pelo catch
-        }
+        const data = await executeSupabaseQuery(async (client) => {
+          const { data, error } = await client.rpc('get_contract_types_count');
+          
+          console.log('[Dashboard] Dados recebidos da RPC:', data); // Log 2
+          if (error) {
+            console.error('[Dashboard] Erro da RPC:', error); // Log 3
+            throw error; // Joga o erro para ser pego pelo catch
+          }
+
+          return data;
+        });
         
         let cltCount = 0;
         let pjCount = 0;

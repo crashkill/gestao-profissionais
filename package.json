@@ -19,7 +19,11 @@
     "preview": "vite preview",
     "update:browserslist": "npx update-browserslist-db@latest",
     "analyze-excel": "tsc -p tsconfig.node.json && node ./dist-scripts/analyzeExcel.js",
-    "upload-supabase": "tsc -p tsconfig.node.json && node ./dist-scripts/uploadToSupabase.js"
+    "upload-supabase": "tsc -p tsconfig.node.json && node ./dist-scripts/uploadToSupabase.js",
+    "doppler:dev": "doppler run -- npm run dev",
+    "doppler:build": "doppler run -- npm run build",
+    "doppler:preview": "doppler run -- npm run preview",
+    "doppler:setup": "node doppler-setup.js"
   },
   "browserslist": {
     "production": [
@@ -76,6 +80,7 @@
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "puppeteer": "^24.10.2",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
