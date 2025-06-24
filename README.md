@@ -28,10 +28,13 @@ cd talent-sphere-registry
 # 2. Instalar dependências
 npm install
 
-# 3. Configurar Doppler (se necessário)
+# 3. Configurar MCP (opcional - para integrações avançadas)
+npm run mcp:setup
+
+# 4. Configurar Doppler (se necessário)
 npm run doppler:setup
 
-# 4. Executar em desenvolvimento
+# 5. Executar em desenvolvimento
 npm run doppler:dev
 ```
 
@@ -51,6 +54,9 @@ npm run doppler:preview
 
 # Configurar Doppler
 npm run doppler:setup
+
+# Configurar MCP (integrações avançadas)
+npm run mcp:setup
 
 # Desenvolvimento tradicional (sem Doppler)
 npm run dev
@@ -126,6 +132,7 @@ Para documentação detalhada, consulte:
 - **[SOLUTION-DOCUMENTATION.md](./SOLUTION-DOCUMENTATION.md)** - Guia completo
 - **[DOPPLER-MIGRATION.md](./DOPPLER-MIGRATION.md)** - Configuração Doppler
 - **[SUPABASE-SETUP.md](./SUPABASE-SETUP.md)** - Configuração Supabase
+- **[MCP-SETUP.md](./MCP-SETUP.md)** - Configuração MCP
 
 ## 🛠️ Tecnologias
 
