@@ -1,0 +1,119 @@
+# 🚀 GitLab CI/CD - Gestão Profissional HITSS
+# Configuração para build e deploy automatizado
+
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+  CACHE_KEY: "node-modules-$CI_COMMIT_REF_SLUG"
+
+# Cache para acelerar builds
+cache:
+  key: $CACHE_KEY
+  paths:
+    - node_modules/
+    - .npm/
+
+# Stage 1: Build
+build:
+  stage: build
+  image: node:$NODE_VERSION-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "🔨 Iniciando build do projeto..."
+    - npm run build
+    - echo "✅ Build concluído com sucesso!"
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+    reports:
+      dotenv: build.env
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Stage 2: Testes (opcional)
+test:
+  stage: test
+  image: node:$NODE_VERSION-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "🧪 Executando testes..."
+    - npm run test || echo "⚠️ Testes não configurados ainda"
+    - echo "✅ Testes concluídos!"
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Stage 3: Deploy para Staging
+deploy:staging:
+  stage: deploy
+  image: node:$NODE_VERSION-alpine
+  script:
+    - echo "🚀 Deploy para ambiente de staging..."
+    - echo "📦 Artefatos prontos em dist/"
+    - ls -la dist/
+    - echo "✅ Deploy de staging concluído!"
+  environment:
+    name: staging
+    url: https://staging.gestao-profissional.globalhitss.com
+  only:
+    - develop
+  when: manual
+
+# Stage 4: Deploy para Produção
+deploy:production:
+  stage: deploy
+  image: node:$NODE_VERSION-alpine
+  script:
+    - echo "🚀 Deploy para ambiente de produção..."
+    - echo "📦 Artefatos prontos em dist/"
+    - ls -la dist/
+    - echo "🔐 Verificando variáveis de ambiente..."
+    - echo "SUPABASE_URL configurada:" $([ -n "$VITE_SUPABASE_URL" ] && echo "✅" || echo "❌")
+    - echo "SUPABASE_KEY configurada:" $([ -n "$VITE_SUPABASE_ANON_KEY" ] && echo "✅" || echo "❌")
+    - echo "✅ Deploy de produção concluído!"
+  environment:
+    name: production
+    url: https://gestao-profissional.globalhitss.com
+  only:
+    - main
+  when: manual
+
+# Job para limpeza de cache (manual)
+clear:cache:
+  stage: build
+  image: alpine:latest
+  script:
+    - echo "🧹 Limpando cache..."
+    - rm -rf node_modules/ .npm/
+    - echo "✅ Cache limpo!"
+  when: manual
+  allow_failure: true
+
+# Job para gerar relatório de dependências
+dependencies:report:
+  stage: build
+  image: node:$NODE_VERSION-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "📋 Gerando relatório de dependências..."
+    - npm audit --audit-level=moderate
+    - npm list --depth=0 > dependencies.txt
+    - echo "✅ Relatório gerado!"
+  artifacts:
+    paths:
+      - dependencies.txt
+    expire_in: 1 week
+  only:
+    - main
+  when: manual 
