@@ -23,7 +23,9 @@
     "doppler:dev": "doppler run -- npm run dev",
     "doppler:build": "doppler run -- npm run build",
     "doppler:preview": "doppler run -- npm run preview",
-    "doppler:setup": "node doppler-setup.js"
+    "doppler:setup": "node doppler-setup.js",
+    "mcp:setup": "node setup-mcp.js",
+    "mcp:install": "node setup-mcp.js"
   },
   "browserslist": {
     "production": [
