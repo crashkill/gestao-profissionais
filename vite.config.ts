@@ -42,6 +42,19 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 8080,
+      proxy: {
+        '/supabase-api': {
+          target: 'https://pwksgdjjkryqryqrvyja.supabase.co',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/supabase-api/, ''),
+          secure: true,
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log('🔄 Proxy error, tentando conectar via Supabase:', err.message);
+            });
+          },
+        },
+      },
     },
     preview: {
       port: 4173,
