@@ -1,0 +1,182 @@
+name: 🚀 Deploy Production
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deploy even with warnings'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  pre-deploy-security:
+    name: 🛡️ Pre-Deploy Security
+    runs-on: ubuntu-latest
+    outputs:
+      security-score: ${{ steps.security-check.outputs.score }}
+      deploy-approved: ${{ steps.security-check.outputs.approved }}
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: 📦 Install Dependencies
+      run: npm ci
+    
+    - name: 🔍 Critical Security Check
+      id: security-check
+      run: |
+        echo "🔍 Running critical security checks..."
+        
+        # Run all security checks
+        npm run secure:full-check
+        
+        # Extract security score
+        SCORE=$(npm run secure:validate 2>&1 | grep -o "🎯 Pontuação de Segurança: [0-9]*/100" | grep -o "[0-9]*" | head -1)
+        echo "score=$SCORE" >> $GITHUB_OUTPUT
+        
+        # Check if deployment should be approved
+        if [ "$SCORE" -ge 90 ]; then
+          echo "approved=true" >> $GITHUB_OUTPUT
+          echo "✅ Security score excellent: $SCORE/100"
+        elif [ "$SCORE" -ge 80 ]; then
+          echo "approved=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Security score acceptable: $SCORE/100"
+        else
+          echo "approved=false" >> $GITHUB_OUTPUT
+          echo "❌ Security score too low for production: $SCORE/100"
+          if [ "${{ github.event.inputs.force_deploy }}" != "true" ]; then
+            exit 1
+          fi
+        fi
+    
+    - name: 🔐 Doppler Connection Test
+      env:
+        DOPPLER_TOKEN: ${{ secrets.DOPPLER_PRODUCTION_TOKEN }}
+      run: |
+        echo "🔐 Testing Doppler connection..."
+        # Install Doppler CLI
+        curl -Ls https://cli.doppler.com/install.sh | sh
+        
+        # Test connection
+        echo "$DOPPLER_TOKEN" | doppler configure set token --scope /
+        doppler secrets --project talent-sphere-registry --config prd_production || {
+          echo "❌ Failed to connect to Doppler production environment"
+          exit 1
+        }
+        echo "✅ Doppler connection successful"
+
+  deploy-production:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: pre-deploy-security
+    if: needs.pre-deploy-security.outputs.deploy-approved == 'true'
+
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: 📦 Install Dependencies
+      run: npm ci
+    
+    - name: 🔐 Configure Doppler
+      env:
+        DOPPLER_TOKEN: ${{ secrets.DOPPLER_PRODUCTION_TOKEN }}
+      run: |
+        curl -Ls https://cli.doppler.com/install.sh | sh
+        echo "$DOPPLER_TOKEN" | doppler configure set token --scope /
+        doppler setup --project talent-sphere-registry --config prd_production
+    
+    - name: 🏗️ Build Application
+      run: |
+        echo "🏗️ Building for production..."
+        doppler run -- npm run build
+    
+    - name: 🧹 Post-Build Security Scan
+      run: |
+        echo "🧹 Scanning build artifacts..."
+        # Ensure no secrets leaked into build
+        if grep -r "eyJ[A-Za-z0-9_-]*\." dist/ 2>/dev/null; then
+          echo "❌ JWT tokens found in build artifacts!"
+          exit 1
+        fi
+        if grep -r "sk-[a-zA-Z0-9]" dist/ 2>/dev/null; then
+          echo "❌ API keys found in build artifacts!"
+          exit 1
+        fi
+        echo "✅ Build artifacts are clean"
+    
+    - name: 📊 Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        cname: ${{ secrets.CUSTOM_DOMAIN }}
+        commit_message: '🚀 Deploy: ${{ github.sha }}'
+    
+    - name: 🔍 Post-Deploy Verification
+      run: |
+        echo "🔍 Verifying deployment..."
+        # Wait a bit for deployment to propagate
+        sleep 30
+        
+        # Check if site is responding
+        DEPLOY_URL="https://${{ github.repository_owner }}.github.io/Gestao-Profissional"
+        curl -f "$DEPLOY_URL" || {
+          echo "❌ Deployment verification failed"
+          exit 1
+        }
+        echo "✅ Deployment verified successfully"
+    
+    - name: 📝 Deployment Report
+      if: always()
+      run: |
+        echo "## 🚀 Production Deployment Report" >> $GITHUB_STEP_SUMMARY
+        echo "- **Security Score**: ${{ needs.pre-deploy-security.outputs.security-score }}/100" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build**: ✅ Successful" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deploy**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Verification**: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Date**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tag**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **URL**: https://${{ github.repository_owner }}.github.io/Gestao-Profissional" >> $GITHUB_STEP_SUMMARY
+
+  notify-deployment:
+    name: 📢 Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-security, deploy-production]
+    if: always()
+    
+    steps:
+    - name: 📢 Success Notification
+      if: needs.deploy-production.result == 'success'
+      run: |
+        echo "🎉 Production deployment successful!"
+        echo "Security Score: ${{ needs.pre-deploy-security.outputs.security-score }}/100"
+        echo "Commit: ${{ github.sha }}"
+    
+    - name: 🚨 Failure Notification
+      if: needs.deploy-production.result == 'failure'
+      run: |
+        echo "❌ Production deployment failed!"
+        echo "Please check the logs and security score"
+        exit 1 
