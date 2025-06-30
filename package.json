@@ -33,7 +33,13 @@
     "doppler:login": "doppler login",
     "secure:check": "grep -r \"VITE_SUPABASE\" . --exclude-dir=node_modules --exclude-dir=.git || echo '✅ Nenhuma chave encontrada'",
     "secure:scan": "grep -rE \"eyJ[A-Za-z0-9_-]*|sk-[A-Za-z0-9_-]*|gsk_[A-Za-z0-9_-]*\" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist || echo '✅ Nenhum token encontrado'",
-    "secure:clean": "find . -name '*.env.backup' -delete && echo '🧹 Arquivos de backup removidos'"
+    "secure:clean": "find . -name '*.env.backup' -delete && echo '🧹 Arquivos de backup removidos'",
+    "secure:test": "npm run secure:scan && npm run secure:check && npm run secure:validate",
+    "secure:validate": "node scripts/security-validation.js",
+    "secure:audit": "npm audit --audit-level=moderate",
+    "secure:full-check": "npm run secure:test && npm run secure:audit && echo '🛡️ Verificação completa de segurança finalizada'",
+    "test:security": "npm run secure:full-check",
+    "monitor:security": "node scripts/security-monitor.js"
   },
   "browserslist": {
     "production": [
