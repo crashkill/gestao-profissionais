@@ -30,7 +30,7 @@ Após criar o projeto:
 1. Vá em **Settings > API**
 2. Copie:
    - **Project URL:** `https://[SEU-ID].supabase.co`
-   - **anon/public key:** Chave que começa com `eyJ...`
+   - **anon/public key:** Chave JWT anônima (regenerar após vazamento)
 
 ### 3. **Atualizar Credenciais no Doppler**
 

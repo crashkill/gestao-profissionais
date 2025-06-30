@@ -32,6 +32,7 @@
     "doppler:secrets": "doppler secrets",
     "doppler:login": "doppler login",
     "secure:check": "grep -r \"VITE_SUPABASE\" . --exclude-dir=node_modules --exclude-dir=.git || echo '✅ Nenhuma chave encontrada'",
+    "secure:scan": "grep -rE \"eyJ[A-Za-z0-9_-]*|sk-[A-Za-z0-9_-]*|gsk_[A-Za-z0-9_-]*\" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist || echo '✅ Nenhum token encontrado'",
     "secure:clean": "find . -name '*.env.backup' -delete && echo '🧹 Arquivos de backup removidos'"
   },
   "browserslist": {
