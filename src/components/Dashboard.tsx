@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Toolti
 import { Users, UserPlus, Upload, BarChart3 } from 'lucide-react'; // Adicionado BarChart3 para "Linguagens Diferentes"
 import { Professional } from '../types/Professional';
 import { supabase, executeSupabaseQuery } from '../lib/supabaseClient'; // Importar instância Supabase
+import * as XLSX from 'xlsx';
 
 interface DashboardProps {
   professionals: Professional[]; // Ainda usado para "Total de Profissionais" e "Áreas de Atuação"
@@ -227,6 +228,32 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
         setLoadingContractCounts(false);
     }
   }, [supabase]); // Adicionar supabase como dependência se ele puder mudar ou ser inicializado tardiamente
+
+  // Função para exportar profissionais para Excel
+  const exportToExcel = () => {
+    // Mapear os profissionais para um formato amigável para Excel
+    const data = professionals.map((prof) => ({
+      'Nome Completo': prof.nome_completo,
+      'Email': prof.email,
+      'Área de Atuação': prof.area_atuacao,
+      'Skill Principal': prof.skill_principal,
+      'Nível de Experiência': prof.nivel_experiencia,
+      'Gestor da Área': prof.gestor_area,
+      'Gestor Direto': prof.gestor_direto,
+      'Disponível para Compartilhamento': prof.disponivel_compartilhamento ? 'Sim' : 'Não',
+      'Percentual de Compartilhamento': prof.percentual_compartilhamento,
+      'Outras Skills/Cargos': prof.outras_tecnologias,
+      'Regime': prof.regime,
+      'Local Alocação': prof.local_alocacao,
+      'Proficiencia Cargo': prof.proficiencia_cargo,
+      'Hora Última Modificação': prof.hora_ultima_modificacao,
+      'Criado em': prof.created_at
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores');
+    XLSX.writeFile(wb, 'colaboradores_exportados.xlsx');
+  };
 
   return (
     <m.div
@@ -454,7 +481,7 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
       </m.div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <m.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -476,6 +503,18 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
           <div className="flex items-center justify-center space-x-3">
             <Upload className="h-6 w-6" />
             <span className="text-lg">Importar do Excel</span>
+          </div>
+        </m.button>
+
+        <m.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={exportToExcel}
+          className="bg-gradient-to-r from-yellow-500 to-green-600 hover:from-yellow-600 hover:to-green-700 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          <div className="flex items-center justify-center space-x-3">
+            <BarChart3 className="h-6 w-6" />
+            <span className="text-lg">Exportar para Excel</span>
           </div>
         </m.button>
       </div>

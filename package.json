@@ -12,20 +12,27 @@
     "hitss"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "dev": "doppler run -- vite",
+    "dev:local": "vite",
+    "dev:homologacao": "doppler run --project gestao-profissional --config stg_homologacao -- vite --mode homologacao",
+    "dev:producao": "doppler run --project gestao-profissional --config prd -- vite --mode producao",
+    "build": "doppler run -- tsc -b && vite build",
+    "build:local": "tsc -b && vite build",
+    "build:homologacao": "doppler run --project gestao-profissional --config stg_homologacao -- vite build --mode homologacao",
+    "build:producao": "doppler run --project gestao-profissional --config prd -- vite build --mode producao",
     "lint": "eslint .",
     "preview": "vite preview",
-    "update:browserslist": "npx update-browserslist-db@latest",
-    "analyze-excel": "tsc -p tsconfig.node.json && node ./dist-scripts/analyzeExcel.js",
-    "upload-supabase": "tsc -p tsconfig.node.json && node ./dist-scripts/uploadToSupabase.js",
-    "doppler:dev": "doppler run -- npm run dev",
-    "doppler:build": "doppler run -- npm run build",
-    "doppler:preview": "doppler run -- npm run preview",
+    "analyze-excel": "tsc analyzeExcel.ts --outDir ./dist-scripts && node ./dist-scripts/analyzeExcel.js",
+    "upload-supabase": "tsc uploadToSupabase.ts --outDir ./dist-scripts && doppler run -- node ./dist-scripts/uploadToSupabase.js",
+    "upload-supabase:local": "tsc uploadToSupabase.ts --outDir ./dist-scripts && node ./dist-scripts/uploadToSupabase.js",
+    "upload-supabase:homologacao": "doppler run --project gestao-profissional --config stg_homologacao -- tsc -p tsconfig.node.json && node ./dist-scripts/uploadToSupabase.js",
+    "upload-supabase:producao": "doppler run --project gestao-profissional --config prd -- tsc -p tsconfig.node.json && node ./dist-scripts/uploadToSupabase.js",
     "doppler:setup": "node doppler-setup.js",
-    "mcp:setup": "node setup-mcp.js",
-    "mcp:install": "node setup-mcp.js"
+    "doppler:dashboard": "doppler dashboard",
+    "doppler:secrets": "doppler secrets",
+    "doppler:login": "doppler login",
+    "secure:check": "grep -r \"VITE_SUPABASE\" . --exclude-dir=node_modules --exclude-dir=.git || echo '✅ Nenhuma chave encontrada'",
+    "secure:clean": "find . -name '*.env.backup' -delete && echo '🧹 Arquivos de backup removidos'"
   },
   "browserslist": {
     "production": [

@@ -8,18 +8,41 @@ export default defineConfig(({ mode }) => {
   // Carrega as variáveis de ambiente
   const env = loadEnv(mode, process.cwd(), '');
   
-  // Configura a base URL para GitHub Pages
-  // Usa o nome do repositório como base no GitHub Pages
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.GITHUB_ACTIONS === 'true';
-  const base = isProduction ? '/gestao-profissionais/' : '/';
+  // Configuração de ambientes
+  const environmentConfig = {
+    development: {
+      base: '/',
+      proxyTarget: 'https://zbiivgtdamejiwcabmcv.supabase.co', // Homologação
+    },
+    homologacao: {
+      base: '/gestao-profissional-homologacao/',
+      proxyTarget: 'https://zbiivgtdamejiwcabmcv.supabase.co',
+    },
+    production: {
+      base: '/gestao-profissionais/',
+      proxyTarget: 'https://pwksgdjjkryqryqrvyja.supabase.co', // Produção
+    }
+  };
 
-  // Configurações de build otimizadas para produção
+  // Detecta o ambiente atual
+  const currentEnv = mode === 'production' ? 'production' 
+                   : mode === 'homologacao' ? 'homologacao' 
+                   : 'development';
+  
+  const config = environmentConfig[currentEnv];
+  const isProduction = mode === 'production' || process.env.GITHUB_ACTIONS === 'true';
+  
+  console.log(`🔧 Configurando Vite para ambiente: ${currentEnv}`);
+  console.log(`📁 Base URL: ${config.base}`);
+  console.log(`🔗 Proxy Target: ${config.proxyTarget}`);
+
+  // Configurações de build otimizadas
   const buildConfig: any = {
-    outDir: 'dist',
+    outDir: mode === 'homologacao' ? 'dist-homologacao' : 'dist',
     assetsDir: 'assets',
     sourcemap: mode === 'development',
     ...(isProduction ? {
-      minify: 'terser' as const,  // Usando 'as const' para garantir o tipo literal
+      minify: 'terser' as const,
       terserOptions: {
         compress: {
           drop_console: true,
@@ -30,6 +53,7 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             react: ['react', 'react-dom', 'react-router-dom'],
+            ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
           },
         },
       }
@@ -37,20 +61,19 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
-    base,
+    base: config.base,
     build: buildConfig,
     server: {
       host: "::",
-      port: 8080,
+      port: mode === 'homologacao' ? 8080 : 5173,
       proxy: {
-        '/supabase-api': {
-          target: 'https://pwksgdjjkryqryqrvyja.supabase.co',
+        '/rest': {
+          target: config.proxyTarget,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/supabase-api/, ''),
           secure: true,
           configure: (proxy, _options) => {
-            proxy.on('error', (err, _req, _res) => {
-              console.log('🔄 Proxy error, tentando conectar via Supabase:', err.message);
+            proxy.on('proxyReq', (proxyReq, req, _res) => {
+              console.log(`🌐 Proxy request (${mode}): ${req.method} ${req.url}`);
             });
           },
         },
@@ -68,6 +91,11 @@ export default defineConfig(({ mode }) => {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
+    },
+    define: {
+      // Injeta variáveis de ambiente em tempo de compilação
+      __ENVIRONMENT__: JSON.stringify(currentEnv),
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
   };
 });

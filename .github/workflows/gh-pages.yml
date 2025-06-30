@@ -1,10 +1,16 @@
-name: Deploy to GitHub Pages
+name: 🚀 Deploy Produção
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Forçar deploy mesmo sem mudanças'
+        required: false
+        default: false
+        type: boolean
 
 # Configura as permissões do job
 permissions:
@@ -14,59 +20,140 @@ permissions:
 
 # Permite que o job atualize o job de deploy
 concurrency:
-  group: 'pages'
-  cancel-in-progress: true
+  group: 'production'
+  cancel-in-progress: false # Não cancela deploys de produção
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
+  security-check:
+    name: 🔒 Verificações de Segurança
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout repository
+      - name: 📁 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Security Audit
+        run: |
+          echo "🔒 Executando auditoria de segurança..."
+          npm audit --audit-level=moderate
+          echo "✅ Auditoria concluída!"
+
+      - name: 🧹 Lint Code
+        run: |
+          echo "🧹 Verificando qualidade do código..."
+          npm run lint
+          echo "✅ Lint aprovado!"
+
+  build-and-deploy:
+    name: 🏗️ Build e Deploy Produção
+    runs-on: ubuntu-latest
+    needs: security-check
+    
+    steps:
+      - name: 📁 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
         run: |
           npm ci
-          # Executa o update:browserslist, mas não falha se houver erros
           npm run update:browserslist || echo "Warning: browserslist update failed, continuing..."
 
-      - name: Build application
+      - name: 🔧 Setup Production Environment
         run: |
-          echo "Building application..."
-          npm run build
+          echo "🚀 Preparando ambiente de produção..."
+          npm run env:prod
+          echo "✅ Ambiente configurado!"
+
+      - name: 🏗️ Build application
+        run: |
+          echo "🔨 Building application for production..."
+          npm run build:producao
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          # Supabase - Produção
+          VITE_SUPABASE_URL: https://pwksgdjjkryqryqrvyja.supabase.co
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          
+          # Ambiente
+          VITE_ENVIRONMENT: producao
+          VITE_APP_TITLE: Talent Sphere - HITSS
+          VITE_DEBUG_MODE: false
+          
+          # APIs de Terceiros (versões de produção)
           VITE_TOGETHER_API_KEY: ${{ secrets.VITE_TOGETHER_API_KEY }}
           VITE_GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
 
-      - name: Verify build output
+      - name: ✅ Verify build output
         run: |
-          echo "Verifying build output..."
+          echo "🔍 Verificando build output..."
           if [ ! -f dist/index.html ]; then
             echo "❌ Error: index.html not found in dist/"
             ls -la dist/ || true
             exit 1
           fi
           echo "✅ Build verified successfully"
+          echo "📊 Production build size:"
+          du -sh dist/
 
-      - name: Setup Pages
+      - name: 🔍 Production Health Check
+        run: |
+          echo "🏥 Executando verificações de produção..."
+          # Verifica se não há console.logs em produção
+          if grep -r "console\.log" dist/ --exclude-dir=node_modules; then
+            echo "⚠️ Warning: console.log encontrado no build de produção"
+          fi
+          echo "✅ Health check concluído!"
+
+      - name: 📄 Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Upload artifact
+      - name: 📤 Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
 
+      - name: 📊 Generate Production Report
+        run: |
+          echo "📊 Generating production report..."
+          cat > production-report.md << EOF
+          # 🚀 Relatório de Deploy - Produção
+          
+          **Branch:** \`${{ github.ref_name }}\`
+          **Commit:** \`${{ github.sha }}\`
+          **Ambiente:** Produção
+          **Data:** $(date)
+          
+          ## ✅ Status
+          - Segurança: Aprovado
+          - Build: Sucesso
+          - Deploy: Em andamento
+          
+          ## 📊 Métricas
+          - Tamanho do build: $(du -sh dist/ | cut -f1)
+          - Node.js: 20
+          - Branches: main
+          
+          ## 🔗 Links
+          - [Ver aplicação](https://crashkill.github.io/gestao-profissionais/)
+          - [Logs do build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          EOF
+
   deploy:
+    name: 🌐 Deploy GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -75,6 +162,20 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Deploy to GitHub Pages
+      - name: 🚀 Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: 🎉 Notify Success
+        if: success()
+        run: |
+          echo "🎉 Deploy de produção realizado com sucesso!"
+          echo "🚀 Ambiente: Produção"
+          echo "🌐 URL: ${{ steps.deployment.outputs.page_url }}"
+
+      - name: ❌ Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Deploy de produção falhou!"
+          echo "🔍 Verifique os logs para mais detalhes"
+          exit 1

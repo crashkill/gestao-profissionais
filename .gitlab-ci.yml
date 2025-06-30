@@ -1,14 +1,19 @@
-# 🚀 GitLab CI/CD - Gestão Profissional HITSS
-# Configuração para build e deploy automatizado
+# 🚀 GitLab CI/CD - Talent Sphere Registry
+# Pipeline multi-ambiente: desenvolvimento → homologação → produção
 
 stages:
+  - security
   - build
   - test
   - deploy
 
 variables:
-  NODE_VERSION: "18"
+  NODE_VERSION: "20"
   CACHE_KEY: "node-modules-$CI_COMMIT_REF_SLUG"
+  
+  # Configurações de ambiente
+  HOMOLOG_SUPABASE_URL: "https://zbiivgtdamejiwcabmcv.supabase.co"
+  PROD_SUPABASE_URL: "https://pwksgdjjkryqryqrvyja.supabase.co"
 
 # Cache para acelerar builds
 cache:
@@ -17,26 +22,101 @@ cache:
     - node_modules/
     - .npm/
 
-# Stage 1: Build
-build:
+# Stage 0: Verificações de Segurança
+security:audit:
+  stage: security
+  image: node:$NODE_VERSION-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "🔒 Executando auditoria de segurança..."
+    - npm audit --audit-level=moderate
+    - echo "✅ Auditoria de segurança aprovada!"
+  only:
+    - main
+    - develop
+    - merge_requests
+
+security:lint:
+  stage: security
+  image: node:$NODE_VERSION-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "🧹 Verificando qualidade do código..."
+    - npm run lint
+    - echo "✅ Lint aprovado!"
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Stage 1: Build para Desenvolvimento
+build:development:
   stage: build
   image: node:$NODE_VERSION-alpine
   before_script:
     - npm ci --cache .npm --prefer-offline
   script:
-    - echo "🔨 Iniciando build do projeto..."
-    - npm run build
-    - echo "✅ Build concluído com sucesso!"
+    - echo "💻 Build para desenvolvimento..."
+    - npm run env:dev
+    - npm run build:dev
+    - echo "✅ Build de desenvolvimento concluído!"
   artifacts:
     paths:
       - dist/
-    expire_in: 1 hour
-    reports:
-      dotenv: build.env
+    expire_in: 30 minutes
+    name: "build-development-$CI_COMMIT_SHORT_SHA"
+  only:
+    - develop
+    - feature/*
+
+# Stage 1: Build para Homologação
+build:homologacao:
+  stage: build
+  image: node:$NODE_VERSION-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "🧪 Build para homologação..."
+    - npm run env:homolog
+    - npm run build:homologacao
+    - echo "✅ Build de homologação concluído!"
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 2 hours
+    name: "build-homologacao-$CI_COMMIT_SHORT_SHA"
+  environment:
+    name: homologacao
+    url: https://homolog.talent-sphere.com
+  only:
+    - develop
+    - homolog
+
+# Stage 1: Build para Produção
+build:producao:
+  stage: build
+  image: node:$NODE_VERSION-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "🚀 Build para produção..."
+    - npm run env:prod
+    - npm run build:producao
+    - echo "✅ Build de produção concluído!"
+    - echo "📊 Tamanho do build:"
+    - du -sh dist/
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+    name: "build-producao-$CI_COMMIT_SHORT_SHA"
+  environment:
+    name: producao
+    url: https://talent-sphere.globalhitss.com
   only:
     - main
-    - develop
-    - merge_requests
 
 # Stage 2: Testes (opcional)
 test:
@@ -53,40 +133,95 @@ test:
     - develop
     - merge_requests
 
-# Stage 3: Deploy para Staging
-deploy:staging:
+# Stage 3: Deploy para Homologação
+deploy:homologacao:
   stage: deploy
   image: node:$NODE_VERSION-alpine
+  dependencies:
+    - build:homologacao
   script:
-    - echo "🚀 Deploy para ambiente de staging..."
-    - echo "📦 Artefatos prontos em dist/"
+    - echo "🧪 Deploy para ambiente de homologação..."
+    - echo "📦 Verificando artefatos:"
     - ls -la dist/
-    - echo "✅ Deploy de staging concluído!"
+    - echo "🔍 Verificando configurações:"
+    - echo "  - Environment: homologacao"
+    - echo "  - Supabase URL: $HOMOLOG_SUPABASE_URL"
+    - echo "  - Build size: $(du -sh dist/ | cut -f1)"
+    - echo "✅ Deploy de homologação concluído!"
+    - echo ""
+    - echo "🌐 Aplicação disponível em:"
+    - echo "   https://homolog.talent-sphere.com"
   environment:
-    name: staging
-    url: https://staging.gestao-profissional.globalhitss.com
+    name: homologacao
+    url: https://homolog.talent-sphere.com
+    on_stop: stop:homologacao
   only:
     - develop
+    - homolog
+  when: manual
+
+# Job para parar ambiente de homologação
+stop:homologacao:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "🛑 Parando ambiente de homologação..."
+    - echo "✅ Ambiente parado!"
+  environment:
+    name: homologacao
+    action: stop
+  only:
+    - develop
+    - homolog
   when: manual
 
 # Stage 4: Deploy para Produção
-deploy:production:
+deploy:producao:
   stage: deploy
   image: node:$NODE_VERSION-alpine
+  dependencies:
+    - build:producao
+  before_script:
+    # Verificações extras de segurança para produção
+    - echo "🔒 Executando verificações finais de produção..."
+    - |
+      if [ -z "$CI_COMMIT_TAG" ] && [ "$CI_COMMIT_REF_NAME" != "main" ]; then
+        echo "❌ Deploy de produção só é permitido na branch main ou com tags!"
+        exit 1
+      fi
   script:
     - echo "🚀 Deploy para ambiente de produção..."
-    - echo "📦 Artefatos prontos em dist/"
+    - echo "📦 Verificando artefatos de produção:"
     - ls -la dist/
-    - echo "🔐 Verificando variáveis de ambiente..."
-    - echo "SUPABASE_URL configurada:" $([ -n "$VITE_SUPABASE_URL" ] && echo "✅" || echo "❌")
-    - echo "SUPABASE_KEY configurada:" $([ -n "$VITE_SUPABASE_ANON_KEY" ] && echo "✅" || echo "❌")
+    - echo "🔍 Verificações finais:"
+    - echo "  - Environment: producao"
+    - echo "  - Branch: $CI_COMMIT_REF_NAME"
+    - echo "  - Commit: $CI_COMMIT_SHA"
+    - echo "  - Supabase URL: $PROD_SUPABASE_URL"
+    - echo "  - Build size: $(du -sh dist/ | cut -f1)"
+    - echo "🔐 Verificando variáveis críticas..."
+    - |
+      if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+        echo "❌ VITE_SUPABASE_ANON_KEY não configurada!"
+        exit 1
+      fi
     - echo "✅ Deploy de produção concluído!"
+    - echo ""
+    - echo "🎉 APLICAÇÃO EM PRODUÇÃO:"
+    - echo "   https://talent-sphere.globalhitss.com"
   environment:
-    name: production
-    url: https://gestao-profissional.globalhitss.com
+    name: producao
+    url: https://talent-sphere.globalhitss.com
   only:
     - main
+    - tags
   when: manual
+  
+  # Requer aprovação manual para produção
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+      when: manual
+      allow_failure: false
 
 # Job para limpeza de cache (manual)
 clear:cache:

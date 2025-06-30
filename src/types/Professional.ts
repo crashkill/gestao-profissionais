@@ -42,6 +42,8 @@ export interface Professional {
   created_at: string | null; // ISO date string
   disponivel_compartilhamento: boolean | null;
   percentual_compartilhamento: '100' | '75' | '50' | '25' | null;
+  gestor_area: string | null; // Gestor da Área (obrigatório)
+  gestor_direto: string | null; // Gestor Direto (obrigatório)
 }
 
 export const AREAS = [

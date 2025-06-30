@@ -2,10 +2,21 @@ const XLSX = require('xlsx');
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 
-// Configurações
+// Configurações - AGORA USANDO VARIÁVEIS DE AMBIENTE (DOPPLER)
 const EXCEL_FILE_PATH = './Cadastro Colaboradores - FSW São Paulo(1-97) - Detalhada.xlsx';
-const SUPABASE_URL = 'https://pwksgdjjkryqryqrvyja.supabase.co';
-const SUPABASE_ANON_KEY = 'sbp_b99b5ab5fc7afde25eb63363028f7f58badc2440';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+
+// Verificar se as variáveis de ambiente estão configuradas
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('❌ ERRO: Variáveis de ambiente do Supabase não configuradas!');
+  console.error('Execute: doppler run -- node uploadToSupabase.cjs');
+  console.error('Ou configure no Doppler:');
+  console.error('  VITE_SUPABASE_URL=sua_url_aqui');
+  console.error('  VITE_SUPABASE_ANON_KEY=sua_chave_aqui');
+  process.exit(1);
+}
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const TABLE_NAME = 'colaboradores';

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, FileSpreadsheet, Check, AlertCircle, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Professional } from '../types/Professional';
+import { supabase } from '../lib/supabaseClient';
 
 interface ExcelImportProps {
   onImport: (professionals: Omit<Professional, 'id' | 'created_at'>[]) => void;
@@ -105,6 +106,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
       'Área de Atuação',
       'Skill Principal',
       'Nível de Experiência',
+      'Gestor da Área',
+      'Gestor Direto',
       'Disponível para Compartilhamento',
       'Percentual de Compartilhamento',
       'Outras Skills'
@@ -117,6 +120,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
         'Área de Atuação': 'Desenvolvedor Frontend',
         'Skill Principal': 'React',
         'Nível de Experiência': 'Pleno',
+        'Gestor da Área': 'Maria Gerente',
+        'Gestor Direto': 'Carlos Supervisor',
         'Disponível para Compartilhamento': 'Sim',
         'Percentual de Compartilhamento': '75',
         'Outras Skills': 'JavaScript, TypeScript, HTML, CSS'
@@ -139,41 +144,72 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
     XLSX.writeFile(wb, 'modelo_importacao_profissionais.xlsx');
   };
 
-  const processImport = () => {
+  const processImport = async () => {
     console.log(`[ExcelImport] Iniciando importação de ${previewData.length} profissionais.`);
-    const professionalsToImport: Omit<Professional, 'id' | 'created_at'>[] = previewData.map((row: any) => ({
-      nome_completo: row['Nome Completo'] || '',
-      email: row.Email || '',
-      area_atuacao: row['Área de Atuação'] || null,
-      skill_principal: row['Skill Principal'] || null,
-      nivel_experiencia: row['Nível de Experiência'] || null,
-      regime: null,
-      local_alocacao: null,
-      proficiencia_cargo: null,
-      java: null,
-      javascript: null,
-      python: null,
-      typescript: null,
-      php: null,
-      dotnet: null,
-      react: null,
-      angular: null,
-      ionic: null,
-      flutter: null,
-      mysql: null,
-      postgres: null,
-      oracle_db: null,
-      sql_server: null,
-      mongodb: null,
-      aws: null,
-      azure: null,
-      gcp: null,
-      outras_tecnologias: row['Outras Skills'] || null,
-      hora_ultima_modificacao: new Date().toISOString(),
-      disponivel_compartilhamento: row['Disponível para Compartilhamento']?.toLowerCase() === 'sim',
-      percentual_compartilhamento: row['Percentual de Compartilhamento'] as '100' | '75' | '50' | '25' | null
+    // Buscar todos os skills existentes do banco
+    const { data: allSkills } = await supabase.from('skills').select('*');
+    const professionalsToImport: Omit<Professional, 'id' | 'created_at'>[] = await Promise.all(previewData.map(async (row: any) => {
+      // Processar outras skills como lista
+      const outrasSkillsRaw = row['Outras Skills'] || '';
+      const outrasSkillsArr = outrasSkillsRaw.split(',').map((s: string) => s.trim()).filter(Boolean);
+      const skillsForThisRow: { nome: string; tipo: string }[] = [];
+      for (const skillName of outrasSkillsArr) {
+        let skill = allSkills?.find((s: any) => s.nome.toLowerCase() === skillName.toLowerCase());
+        if (!skill) {
+          // Adicionar como tipo 'cargo' por padrão (ou outro critério se desejar)
+          const { data: newSkill } = await supabase.from('skills').insert([{ nome: skillName, tipo: 'cargo' }]).select();
+          if (newSkill && newSkill[0]) {
+            skill = newSkill[0];
+          }
+        }
+        if (skill) skillsForThisRow.push({ nome: skill.nome, tipo: skill.tipo });
+      }
+      return {
+        nome_completo: row['Nome Completo'] || '',
+        email: row.Email || '',
+        area_atuacao: row['Área de Atuação'] || null,
+        skill_principal: row['Skill Principal'] || null,
+        nivel_experiencia: row['Nível de Experiência'] || null,
+        gestor_area: row['Gestor da Área'] || '',
+        gestor_direto: row['Gestor Direto'] || '',
+        regime: null,
+        local_alocacao: null,
+        proficiencia_cargo: null,
+        java: null,
+        javascript: null,
+        python: null,
+        typescript: null,
+        php: null,
+        dotnet: null,
+        react: null,
+        angular: null,
+        ionic: null,
+        flutter: null,
+        mysql: null,
+        postgres: null,
+        oracle_db: null,
+        sql_server: null,
+        mongodb: null,
+        aws: null,
+        azure: null,
+        gcp: null,
+        outras_tecnologias: skillsForThisRow.map(s => `${s.nome} (${s.tipo})`).join(', '),
+        hora_ultima_modificacao: new Date().toISOString(),
+        disponivel_compartilhamento: row['Disponível para Compartilhamento']?.toLowerCase() === 'sim',
+        percentual_compartilhamento: row['Percentual de Compartilhamento'] as '100' | '75' | '50' | '25' | null,
+        gerencia_projetos: null,
+        administracao_projetos: null,
+        analise_requisitos: null,
+        android: null,
+        cobol: null,
+        linguagem_r: null,
+        linguagem_c: null,
+        linguagem_cpp: null,
+        windows: null,
+        raspberry_pi: null,
+        arduino: null
+      };
     }));
-
     onImport(professionalsToImport);
     console.log('[ExcelImport] Importação concluída. Mostrando sucesso e redirecionando.');
     setShowSuccess(true);
@@ -232,7 +268,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={processImport}
+              onClick={async () => { await processImport(); }}
               className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300"
             >
               Confirmar Importação
@@ -247,7 +283,9 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
                   <th className="text-left p-3 text-slate-300">Email</th>
                   <th className="text-left p-3 text-slate-300">Área</th>
                   <th className="text-left p-3 text-slate-300">Skill Principal</th>
-                  <th className="text-left p-3 text-slate-300">Compartilhamento</th>
+                  <th className="text-left p-3 text-slate-300">Gestor da Área</th>
+                  <th className="text-left p-3 text-slate-300">Gestor Direto</th>
+                  <th className="text-left p-3 text-slate-300">Disponível para Compartilhamento</th>
                   <th className="text-left p-3 text-slate-300">Percentual</th>
                 </tr>
               </thead>
@@ -258,6 +296,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
                     <td className="p-3 text-slate-300">{row.Email}</td>
                     <td className="p-3 text-slate-300">{row.Area}</td>
                     <td className="p-3 text-slate-300">{row['Skill Principal']}</td>
+                    <td className="p-3 text-slate-300">{row['Gestor da Área']}</td>
+                    <td className="p-3 text-slate-300">{row['Gestor Direto']}</td>
                     <td className="p-3 text-slate-300">{row['Disponivel para Compartilhamento']}</td>
                     <td className="p-3 text-slate-300">{row['Percentual de Compartilhamento']}%</td>
                   </tr>
@@ -368,6 +408,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
                 <li>Email</li>
                 <li>Area</li>
                 <li>Skill Principal</li>
+                <li>Gestor da Área</li>
+                <li>Gestor Direto</li>
                 <li>Disponivel para Compartilhamento (Sim/Não)</li>
                 <li>Percentual de Compartilhamento (100/75/50/25)</li>
               </ul>

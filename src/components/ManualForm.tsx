@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, X, Check } from 'lucide-react';
 import { Professional, AREAS, MAIN_SKILLS, OTHER_SKILLS, SKILL_COLUMN_MAP } from '../types/Professional';
+import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from './ui/command';
+import { Button } from './ui/button';
+import { supabase } from '../lib/supabaseClient';
 
 interface ManualFormProps {
   onSubmit: (professional: Omit<Professional, 'id' | 'created_at'>) => void;
@@ -15,39 +18,55 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
     area: '',
     mainSkill: '',
     level: 'Júnior' as 'Júnior' | 'Pleno' | 'Sênior',
-    otherSkills: [] as Array<{ name: string; level: 'Júnior' | 'Pleno' | 'Sênior' }>,
     disponivel_compartilhamento: false,
-    percentual_compartilhamento: null as '100' | '75' | '50' | '25' | null
+    percentual_compartilhamento: null as '100' | '75' | '50' | '25' | null,
+    gestor_area: '',
+    gestor_direto: ''
   });
 
-  const [currentSkill, setCurrentSkill] = useState('');
-  const [currentLevel, setCurrentLevel] = useState<'Júnior' | 'Pleno' | 'Sênior'>('Júnior');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [skills, setSkills] = useState<{ id: number; nome: string; tipo: string }[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<{ id: number; nome: string; tipo: string }[]>([]);
+  const [skillSearch, setSkillSearch] = useState('');
+  const [showAddSkill, setShowAddSkill] = useState(false);
+  const [newSkillName, setNewSkillName] = useState('');
+  const [newSkillType, setNewSkillType] = useState('cargo');
+  const skillTypes = ['cargo', 'linguagem', 'framework', 'cloud', 'banco', 'bi', 'devops', 'ciberseguranca', 'ia', 'blockchain'];
 
+  useEffect(() => {
+    supabase.from('skills').select('*').then(({ data }) => {
+      if (data) setSkills(data);
+    });
+  }, []);
 
-
-  const addSkill = () => {
-    if (currentSkill && !formData.otherSkills.find(s => s.name === currentSkill)) {
-      setFormData({
-        ...formData,
-        otherSkills: [...formData.otherSkills, { name: currentSkill, level: currentLevel }]
-      });
-      setCurrentSkill('');
-      setCurrentLevel('Júnior');
+  const handleSkillSelect = (skill: { id: number; nome: string; tipo: string }) => {
+    if (!selectedSkills.find(s => s.id === skill.id)) {
+      setSelectedSkills([...selectedSkills, skill]);
     }
   };
 
-  const removeSkill = (skillName: string) => {
-    setFormData({
-      ...formData,
-      otherSkills: formData.otherSkills.filter(s => s.name !== skillName)
-    });
+  const handleSkillRemove = (id: number) => {
+    setSelectedSkills(selectedSkills.filter(s => s.id !== id));
+  };
+
+  const handleAddSkill = async () => {
+    if (!newSkillName) return;
+    const { data, error } = await supabase.from('skills').insert([{ nome: newSkillName, tipo: newSkillType }]).select();
+    if (data && data[0]) {
+      setSkills([...skills, data[0]]);
+      setSelectedSkills([...selectedSkills, data[0]]);
+      setShowAddSkill(false);
+      setNewSkillName('');
+      setNewSkillType('cargo');
+    } else {
+      alert('Erro ao adicionar skill');
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.mainSkill) {
+    if (!formData.name || !formData.email || !formData.mainSkill || !formData.gestor_area || !formData.gestor_direto) {
       alert('Por favor, preencha todos os campos obrigatórios');
       return;
     }
@@ -80,7 +99,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
       aws: null,
       azure: null,
       gcp: null,
-      outras_tecnologias: null,
+      outras_tecnologias: selectedSkills.map(s => `${s.nome} (${s.tipo})`).join(', '),
       android: null,
       cobol: null,
       linguagem_r: null,
@@ -90,26 +109,18 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
       raspberry_pi: null,
       arduino: null,
       disponivel_compartilhamento: formData.disponivel_compartilhamento,
-      percentual_compartilhamento: formData.disponivel_compartilhamento ? formData.percentual_compartilhamento : null
+      percentual_compartilhamento: formData.disponivel_compartilhamento ? formData.percentual_compartilhamento : null,
+      gestor_area: formData.gestor_area,
+      gestor_direto: formData.gestor_direto,
+      gerencia_projetos: null,
+      administracao_projetos: null,
+      analise_requisitos: null
     };
 
     const mainSkillColumn = SKILL_COLUMN_MAP[formData.mainSkill];
     if (mainSkillColumn && mainSkillColumn in professional) {
       (professional as any)[mainSkillColumn] = formData.level;
     }
-
-    formData.otherSkills.forEach(skill => {
-      const skillColumn = SKILL_COLUMN_MAP[skill.name];
-      if (skillColumn && skillColumn in professional) {
-        (professional as any)[skillColumn] = skill.level;
-      } else {
-        const currentOtherTechs = professional.outras_tecnologias || '';
-        const newTech = `${skill.name} - ${skill.level}`;
-        professional.outras_tecnologias = currentOtherTechs 
-          ? `${currentOtherTechs}, ${newTech}`
-          : newTech;
-      }
-    });
 
     onSubmit(professional);
 
@@ -242,6 +253,34 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
             </select>
           </div>
 
+          {/* Gestor da Área */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Gestor da Área *
+            </label>
+            <input
+              type="text"
+              value={formData.gestor_area}
+              onChange={(e) => setFormData({ ...formData, gestor_area: e.target.value })}
+              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          {/* Gestor Direto */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Gestor Direto *
+            </label>
+            <input
+              type="text"
+              value={formData.gestor_direto}
+              onChange={(e) => setFormData({ ...formData, gestor_direto: e.target.value })}
+              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
           {/* Skill Principal */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -274,60 +313,61 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
             </select>
           </div>
 
-          {/* Outras Skills */}
+          {/* Skills/Cargos (Multi-seleção) */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Outras Skills
+              Skills/Cargos
             </label>
-            <div className="flex gap-2 mb-3">
-              <select
-                value={currentSkill}
-                onChange={(e) => setCurrentSkill(e.target.value)}
-                className="flex-1 p-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="" className="bg-slate-800">Selecione uma skill</option>
-                {OTHER_SKILLS.filter(skill => !formData.otherSkills.find(s => s.name === skill)).map((skill) => (
-                  <option key={skill} value={skill} className="bg-slate-800">{skill}</option>
-                ))}
-              </select>
-              <select
-                value={currentLevel}
-                onChange={(e) => setCurrentLevel(e.target.value as 'Júnior' | 'Pleno' | 'Sênior')}
-                className="p-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Júnior" className="bg-slate-800">Júnior</option>
-                <option value="Pleno" className="bg-slate-800">Pleno</option>
-                <option value="Sênior" className="bg-slate-800">Sênior</option>
-              </select>
-              <button
-                type="button"
-                onClick={addSkill}
-                className="p-3 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
-              >
-                <Plus className="h-5 w-5 text-white" />
-              </button>
-            </div>
-
-            {/* Skills Adicionadas */}
-            <div className="flex flex-wrap gap-2">
-              {formData.otherSkills.map((skill, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex items-center gap-2 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm"
-                >
-                  <span>{skill.name} ({skill.level})</span>
-                  <button
-                    type="button"
-                    onClick={() => removeSkill(skill.name)}
-                    className="hover:bg-purple-500/30 rounded-full p-1"
+            <Command>
+              <CommandInput
+                placeholder="Buscar skill/cargo..."
+                value={skillSearch}
+                onValueChange={setSkillSearch}
+              />
+              <CommandList>
+                {skills.filter(skill => skill.nome.toLowerCase().includes(skillSearch.toLowerCase())).map(skill => (
+                  <CommandItem
+                    key={skill.id}
+                    onSelect={() => handleSkillSelect(skill)}
+                    className={selectedSkills.find(s => s.id === skill.id) ? 'bg-blue-100' : ''}
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </motion.div>
+                    {skill.nome} <span className="ml-2 text-xs text-slate-400">({skill.tipo})</span>
+                  </CommandItem>
+                ))}
+                <CommandEmpty>
+                  Nenhum skill/cargo encontrado.<br />
+                  <Button type="button" size="sm" onClick={() => setShowAddSkill(true)} className="mt-2">Adicionar novo</Button>
+                </CommandEmpty>
+              </CommandList>
+            </Command>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedSkills.map(skill => (
+                <span key={skill.id} className="bg-blue-600 text-white px-2 py-1 rounded flex items-center">
+                  {skill.nome} <span className="ml-1 text-xs">({skill.tipo})</span>
+                  <button type="button" className="ml-1" onClick={() => handleSkillRemove(skill.id)}><X size={14} /></button>
+                </span>
               ))}
             </div>
+            {showAddSkill && (
+              <div className="mt-2 bg-white/10 p-4 rounded-lg">
+                <input
+                  type="text"
+                  placeholder="Nome do skill/cargo"
+                  value={newSkillName}
+                  onChange={e => setNewSkillName(e.target.value)}
+                  className="w-full p-2 rounded mb-2"
+                />
+                <select
+                  value={newSkillType}
+                  onChange={e => setNewSkillType(e.target.value)}
+                  className="w-full p-2 rounded mb-2"
+                >
+                  {skillTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                </select>
+                <Button type="button" onClick={handleAddSkill}>Adicionar</Button>
+                <Button type="button" variant="ghost" onClick={() => setShowAddSkill(false)} className="ml-2">Cancelar</Button>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}

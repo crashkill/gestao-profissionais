@@ -34,6 +34,8 @@ for (let i = 0; i < 100; i++) {
     'Área de Atuação': faker.helpers.arrayElement(areas),
     'Skill Principal': faker.helpers.arrayElement(mainSkills),
     'Nível de Experiência': faker.helpers.arrayElement(levels),
+    'Gestor da Área': faker.person.fullName(),
+    'Gestor Direto': faker.person.fullName(),
     'Disponível para Compartilhamento': isShared ? 'Sim' : 'Não',
     'Percentual de Compartilhamento': isShared ? faker.helpers.arrayElement(sharePercentages) : '',
     'Outras Skills': selectedOtherSkills.join(','),

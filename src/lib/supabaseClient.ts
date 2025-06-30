@@ -2,14 +2,24 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const environment = import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development';
 
 // Debug: Log das variáveis (apenas em desenvolvimento)
-if (import.meta.env.DEV) {
+if (import.meta.env.DEV || environment === 'desenvolvimento') {
   console.log('🔍 Supabase Debug:', {
-    url: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'MISSING',
+    url: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'MISSING',
     key: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'MISSING',
-    env: import.meta.env.MODE
+    environment: environment,
+    mode: import.meta.env.MODE,
+    title: import.meta.env.VITE_APP_TITLE || 'Talent Sphere'
   });
+  
+  // Identifica qual ambiente está sendo usado
+  if (supabaseUrl?.includes('zbiivgtdamejiwcabmcv')) {
+    console.log('🧪 Usando banco de HOMOLOGAÇÃO');
+  } else if (supabaseUrl?.includes('pwksgdjjkryqryqrvyja')) {
+    console.log('🚀 Usando banco de PRODUÇÃO');
+  }
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
