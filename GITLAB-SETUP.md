@@ -79,7 +79,7 @@ deploy:
 | Variável | Valor | Tipo | Protegida |
 |----------|-------|------|-----------|
 | `VITE_SUPABASE_URL` | `https://pwksgdjjkryqryqrvyja.supabase.co` | Variable | ✅ |
-| `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` | Variable | ✅ |
+| `VITE_SUPABASE_ANON_KEY` | `[CHAVE_REGENERADA_NO_SUPABASE]` | Variable | ✅ |
 | `DOPPLER_TOKEN` | `dp.st.xxx` (opcional) | Variable | ✅ |
 
 **Passos para adicionar:**

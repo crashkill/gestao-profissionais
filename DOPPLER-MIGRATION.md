@@ -46,7 +46,7 @@ npm run dev
 ```bash
 # .env (EXPOSTO)
 VITE_SUPABASE_URL=https://pwksgdjjkryqryqryqrvyja.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
+VITE_SUPABASE_ANON_KEY=[SUA_NOVA_CHAVE_AQUI]
 ```
 
 ### **Depois (SEGURO):**

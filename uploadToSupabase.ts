@@ -6,8 +6,8 @@ import * as fs from 'fs';
 const EXCEL_FILE_PATH = '/Users/fabriciocardosodelima/Desktop/talent-sphere-registry/public/Cadastro Colaboradores - FSW São Paulo(1-110).xlsx';
 const EXCEL_SHEET_NAME = 'Sheet1';
 
-const SUPABASE_URL = 'https://pwksgdjjkryqryqrvyja.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3a3NnZGpqa3J5cXJ5cXJ2eWphIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODU2MDA0OCwiZXhwIjoyMDY0MTM2MDQ4fQ.FaNXM6jMHLAa-e6A8PQlZY9wxv9XrweZa4vMCYNhdk4';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const TABLE_NAME = 'colaboradores';

@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-scripts
 *.local
 package-lock.json
 
@@ -24,5 +25,32 @@ package-lock.json
 *.sln
 *.sw?
 
-# Environment variables
+# Environment variables & Security
 .env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+
+# API Keys & Tokens (extra safety)
+**/secrets/
+**/*secret*
+**/*token*
+**/*key*
+**/api-keys/
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+
+# OS generated files
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
