@@ -107,7 +107,7 @@ jobs:
     - name: 🏗️ Build Application
       run: |
         echo "🏗️ Building for production..."
-        doppler run -- npm run build
+        npm run build:local
     
     - name: 🧹 Post-Build Security Scan
       run: |

@@ -82,7 +82,7 @@ jobs:
       - name: 🏗️ Build application
         run: |
           echo "🔨 Building application for production..."
-          npm run build
+          npm run build:local
         env:
           # Supabase - Produção
           VITE_SUPABASE_URL: https://pwksgdjjkryqryqrvyja.supabase.co
