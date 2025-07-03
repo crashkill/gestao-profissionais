@@ -3,7 +3,7 @@ import { motion as m } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend, Cell } from 'recharts'; // Adicionado BarChart, Bar, XAxis, YAxis, CartesianGrid
 import { Users, UserPlus, Upload, BarChart3 } from 'lucide-react'; // Adicionado BarChart3 para "Linguagens Diferentes"
 import { Professional } from '../types/Professional';
-import { supabase, executeSupabaseQuery } from '../lib/supabaseClient'; // Importar instância Supabase
+import { supabase, supabaseDirect, executeSupabaseQuery } from '../lib/supabaseClient'; // Importar instância Supabase
 import * as XLSX from 'xlsx';
 
 interface DashboardProps {
@@ -70,18 +70,19 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log('[Dashboard] 📊 Iniciando busca dos dados do gráfico de skills...');
       setLoadingChart(true);
       setErrorChart(null);
       try {
-        const data = await executeSupabaseQuery(async (client) => {
-          const { data, error } = await client.rpc('get_skill_proficiency_distribution');
-
-          if (error) {
-            throw error;
-          }
-
-          return data;
-        });
+        // Usar conexão direta (sem proxy) com o Supabase
+        const { data, error } = await supabaseDirect.rpc('get_skill_proficiency_distribution');
+        
+        console.log('[Dashboard] 📊 Dados do gráfico recebidos:', data?.length || 0, 'registros');
+        
+        if (error) {
+          console.error('[Dashboard] ❌ Erro da RPC de skills:', error);
+          throw error;
+        }
 
         if (data) {
           const rawData = data as SkillProficiencyEntry[];
@@ -103,13 +104,15 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
             .filter(item => item.total > 0) // Mostrar apenas skills com algum profissional
             .sort((a, b) => b.total - a.total); // Opcional: ordenar por total
           
+          console.log('[Dashboard] 📊 Gráfico processado:', mainChartData.length, 'skills encontradas');
           setMainSkillsChartData(mainChartData);
         }
       } catch (err: any) {
-        console.error("Erro ao buscar dados de proficiência de skills:", err);
+        console.error("[Dashboard] ❌ Erro ao buscar dados de proficiência de skills:", err);
         setErrorChart(err.message || 'Falha ao buscar dados dos gráficos.');
       } finally {
         setLoadingChart(false);
+        console.log('[Dashboard] 📊 Busca do gráfico finalizada.');
       }
     };
 
@@ -180,18 +183,16 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
       console.log('[Dashboard] Iniciando busca por contagens de tipos de contrato...'); // Log 1
       setLoadingContractCounts(true);
       try {
-        const data = await executeSupabaseQuery(async (client) => {
-          const { data, error } = await client.rpc('get_contract_types_count');
-          
-          console.log('[Dashboard] Dados recebidos da RPC:', data); // Log 2
-          if (error) {
-            console.error('[Dashboard] Erro da RPC:', error); // Log 3
-            throw error; // Joga o erro para ser pego pelo catch
-          }
-
-          return data;
-        });
+        // Usar conexão direta (sem proxy) com o Supabase
+        const { data, error } = await supabaseDirect.rpc('get_contract_types_count');
         
+        console.log('[Dashboard] Dados recebidos da RPC (direto):', data, 'Erro:', error); // Log 2
+        
+        if (error) {
+          console.error('[Dashboard] Erro da RPC:', error); // Log 3
+          throw error; // Joga o erro para ser pego pelo catch
+        }
+
         let cltCount = 0;
         let pjCount = 0;
         
@@ -221,13 +222,8 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
       }
     };
     
-    if (supabase) { // Adicionar verificação para garantir que supabase está disponível
-        fetchContractCounts();
-    } else {
-        console.error('[Dashboard] Instância Supabase não está disponível no momento da chamada fetchContractCounts.');
-        setLoadingContractCounts(false);
-    }
-  }, [supabase]); // Adicionar supabase como dependência se ele puder mudar ou ser inicializado tardiamente
+    fetchContractCounts();
+  }, []); // Remover dependência do supabase
 
   // Função para exportar profissionais para Excel
   const exportToExcel = () => {

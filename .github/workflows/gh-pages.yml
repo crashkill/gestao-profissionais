@@ -44,7 +44,7 @@ jobs:
       - name: 🔍 Security Audit
         run: |
           echo "🔒 Executando auditoria de segurança..."
-          npm audit --audit-level=moderate
+          npm run secure:audit
           echo "✅ Auditoria concluída!"
 
       - name: 🧹 Lint Code
@@ -76,13 +76,13 @@ jobs:
       - name: 🔧 Setup Production Environment
         run: |
           echo "🚀 Preparando ambiente de produção..."
-          npm run env:prod
+          echo "NODE_ENV=production" > .env.production
           echo "✅ Ambiente configurado!"
 
       - name: 🏗️ Build application
         run: |
           echo "🔨 Building application for production..."
-          npm run build:producao
+          npm run build
         env:
           # Supabase - Produção
           VITE_SUPABASE_URL: https://pwksgdjjkryqryqrvyja.supabase.co
@@ -148,7 +148,7 @@ jobs:
           - Branches: main
           
           ## 🔗 Links
-          - [Ver aplicação](https://crashkill.github.io/gestao-profissionais/)
+          - [Ver aplicação](https://crashkill.github.io/Gestao-Profissional/)
           - [Logs do build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           EOF
 

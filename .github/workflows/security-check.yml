@@ -51,12 +51,19 @@ jobs:
     - name: 📊 Dependency Audit
       run: |
         echo "📊 Running dependency audit..."
-        npm run secure:audit --audit-level=moderate
-        if [ $? -ne 0 ]; then
-          echo "⚠️ High/Critical vulnerabilities found!"
-          echo "Please run 'npm audit fix' to resolve issues"
-          # Don't fail the build for audit issues, just warn
-        fi
+        npm run secure:audit || {
+          echo "⚠️ Vulnerabilities found in dependencies!"
+          echo "Checking if fixes are available..."
+          
+          # Check if there are fixable vulnerabilities
+          npm audit fix --dry-run && {
+            echo "❌ Fixable vulnerabilities found! Please run 'npm audit fix'"
+            exit 1
+          } || {
+            echo "⚠️ No fixable vulnerabilities - known issues without fixes"
+            echo "✅ Security audit completed with warnings"
+          }
+        }
     
     - name: 🏗️ Build Test
       run: |
