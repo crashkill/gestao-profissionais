@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
       proxyTarget: 'https://zbiivgtdamejiwcabmcv.supabase.co',
     },
     production: {
-      base: '/gestao-profissionais/',
+      base: '/Gestao-Profissional/', // Corrigido para o subdiretório correto do GitHub Pages
       proxyTarget: 'https://pwksgdjjkryqryqrvyja.supabase.co', // Produção
     }
   };
