@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { askSmartAI } from '../lib/smartai';
+import { Professional } from '../types/Professional';
 
 interface Message {
   question: string;
@@ -9,7 +10,7 @@ interface Message {
 }
 
 interface AIChatProps {
-  professionals: any[];
+  professionals: Professional[];
 }
 
 const CACHE_KEY = 'ai_chat_cache';

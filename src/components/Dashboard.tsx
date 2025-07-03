@@ -151,18 +151,19 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
     setLoadingProfessionalsList(true);
     setProfessionalsList([]); // Limpa lista anterior
     try {
-      const data = await executeSupabaseQuery(async (client) => {
-        const { data, error } = await client.rpc('get_professionals_by_skill_and_proficiency', {
+      const data: ProfessionalDetail[] | null = await executeSupabaseQuery(async (client) => {
+        const { data: rpcData, error } = await client.rpc('get_professionals_by_skill_and_proficiency', {
           target_skill_name: selectedSkill,
           target_proficiency_level: proficiencyLevel,
         });
         if (error) throw error;
-        return data;
+        return rpcData;
       });
-      setProfessionalsList(data as ProfessionalDetail[]);
-    } catch (err: any) {
-      console.error('Erro ao buscar lista de profissionais:', err);
-      setErrorChart(err.message || 'Falha ao buscar lista de profissionais.'); // Reutilizando errorChart para simplicidade
+      setProfessionalsList(data || []);
+    } catch (err) {
+      const error = err as Error;
+      console.error('Erro ao buscar lista de profissionais:', error);
+      setErrorChart(error.message || 'Falha ao buscar lista de profissionais.'); // Reutilizando errorChart para simplicidade
     } finally {
       setLoadingProfessionalsList(false);
     }
@@ -184,6 +185,7 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
       setLoadingContractCounts(true);
       try {
         // Usar conexão direta (sem proxy) com o Supabase
+        type ContractCount = { tipo_contrato: 'CLT' | 'PJ'; quantidade: number };
         const { data, error } = await supabaseDirect.rpc('get_contract_types_count');
         
         console.log('[Dashboard] Dados recebidos da RPC (direto):', data, 'Erro:', error); // Log 2
@@ -198,7 +200,7 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
         
         if (data && Array.isArray(data)) {
           console.log('[Dashboard] Processando dados recebidos:', data); // Log adicional
-          data.forEach(item => {
+          (data as ContractCount[]).forEach((item) => {
             if (item.tipo_contrato === 'CLT') {
               cltCount = Number(item.quantidade);
             } else if (item.tipo_contrato === 'PJ') {
@@ -212,8 +214,9 @@ const Dashboard: React.FC<DashboardProps> = ({ professionals, onNavigate }) => {
         setContractTypeCounts({ cltCount, pjCount });
         console.log('[Dashboard] Contagens definidas - CLT:', cltCount, 'PJ:', pjCount); // Log 4
 
-      } catch (err: any) {
-        console.error('[Dashboard] Erro ao buscar ou processar contagens de tipos de contrato:', err.message || err);
+      } catch (err) {
+        const error = err as Error;
+        console.error('[Dashboard] Erro ao buscar ou processar contagens de tipos de contrato:', error.message || err);
         // Mantém os valores zerados ou define um estado de erro, se preferir
         setContractTypeCounts({ cltCount: 0, pjCount: 0 });
       } finally {

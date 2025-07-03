@@ -5,6 +5,20 @@ import * as XLSX from 'xlsx';
 import { Professional } from '../types/Professional';
 import { supabase } from '../lib/supabaseClient';
 
+// Interface para representar uma linha do arquivo Excel
+interface ExcelRow {
+  'Nome Completo': string;
+  'Email': string;
+  'Área de Atuação': string;
+  'Skill Principal': string;
+  'Nível de Experiência': 'Júnior' | 'Pleno' | 'Sênior' | 'Especialista';
+  'Gestor da Área'?: string;
+  'Gestor Direto'?: string;
+  'Disponível para Compartilhamento'?: 'Sim' | 'Não';
+  'Percentual de Compartilhamento'?: '100' | '75' | '50' | '25';
+  'Outras Skills'?: string;
+}
+
 interface ExcelImportProps {
   onImport: (professionals: Omit<Professional, 'id' | 'created_at'>[]) => void;
   onBack: () => void;
@@ -12,7 +26,7 @@ interface ExcelImportProps {
 
 const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
   const [dragActive, setDragActive] = useState(false);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<ExcelRow[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
@@ -54,7 +68,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        const jsonData = XLSX.utils.sheet_to_json<ExcelRow>(worksheet);
 
         console.log(`[ExcelImport] ${jsonData.length} linhas encontradas no arquivo.`);
 
@@ -63,9 +77,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
           return;
         }
 
-        // Validate required columns
-        const requiredColumns = ['Nome Completo', 'Email', 'Área de Atuação', 'Skill Principal', 'Nível de Experiência'];
-        const firstRow = jsonData[0] as any;
+        const requiredColumns: (keyof ExcelRow)[] = ['Nome Completo', 'Email', 'Área de Atuação', 'Skill Principal', 'Nível de Experiência'];
+        const firstRow = jsonData[0];
         const actualColumns = Object.keys(firstRow);
         console.log('[ExcelImport] Colunas encontradas no arquivo:', actualColumns);
 
@@ -82,12 +95,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
         setPreviewData(jsonData);
         setShowPreview(true);
       } catch (err) {
-        console.error('[ExcelImport] Erro no processamento do Excel:', err);
-        setError('Erro ao processar o arquivo Excel');
+        const castedErr = err as Error;
+        console.error('[ExcelImport] Erro no processamento do Excel:', castedErr);
+        setError('Erro ao processar o arquivo Excel: ' + castedErr.message);
       }
     };
-    reader.onerror = (err) => {
-        console.error('[ExcelImport] Erro na leitura do arquivo:', err);
+    reader.onerror = () => {
         setError('Não foi possível ler o arquivo.');
     };
     reader.readAsArrayBuffer(file);
@@ -100,24 +113,11 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
   };
 
   const generateTemplate = () => {
-    const headers = [
-      'Nome Completo',
-      'Email',
-      'Área de Atuação',
-      'Skill Principal',
-      'Nível de Experiência',
-      'Gestor da Área',
-      'Gestor Direto',
-      'Disponível para Compartilhamento',
-      'Percentual de Compartilhamento',
-      'Outras Skills'
-    ];
-
-    const exampleData = [
+    const exampleData: ExcelRow[] = [
       {
         'Nome Completo': 'João Silva',
         'Email': 'joao.silva@exemplo.com',
-        'Área de Atuação': 'Desenvolvedor Frontend',
+        'Área de Atuação': 'Desenvolvimento Frontend',
         'Skill Principal': 'React',
         'Nível de Experiência': 'Pleno',
         'Gestor da Área': 'Maria Gerente',
@@ -131,35 +131,41 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
     const ws = XLSX.utils.json_to_sheet(exampleData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Profissionais');
-
-    // Adicionar validações
-    const validations = {
-      'D2:D1000': ['JavaScript', 'TypeScript', 'Python', 'Java', 'C#', 'PHP', 'Go', 'Rust', 'Swift', 'Kotlin', 'React', 'Vue.js', 'Angular', 'Node.js', '.NET', 'Spring Boot'],
-      'E2:E1000': ['Sim', 'Não'],
-      'F2:F1000': ['100', '75', '50', '25'],
-      'H2:H1000': ['Júnior', 'Pleno', 'Sênior']
-    };
-
-    // Salvar o arquivo
     XLSX.writeFile(wb, 'modelo_importacao_profissionais.xlsx');
   };
 
   const processImport = async () => {
     console.log(`[ExcelImport] Iniciando importação de ${previewData.length} profissionais.`);
-    // Buscar todos os skills existentes do banco
-    const { data: allSkills } = await supabase.from('skills').select('*');
-    const professionalsToImport: Omit<Professional, 'id' | 'created_at'>[] = await Promise.all(previewData.map(async (row: any) => {
-      // Processar outras skills como lista
+    const { data: allSkills, error: skillsError } = await supabase.from('skills').select('id, nome, tipo');
+
+    if (skillsError) {
+      console.error("Erro ao buscar skills:", skillsError);
+      setError("Não foi possível carregar as skills existentes para a importação.");
+      return;
+    }
+
+    type Skill = { id: number; nome: string; tipo: string };
+
+    const professionalsToImport: Omit<Professional, 'id' | 'created_at'>[] = await Promise.all(previewData.map(async (row) => {
       const outrasSkillsRaw = row['Outras Skills'] || '';
       const outrasSkillsArr = outrasSkillsRaw.split(',').map((s: string) => s.trim()).filter(Boolean);
+      
       const skillsForThisRow: { nome: string; tipo: string }[] = [];
+
       for (const skillName of outrasSkillsArr) {
-        let skill = allSkills?.find((s: any) => s.nome.toLowerCase() === skillName.toLowerCase());
+        let skill = allSkills?.find((s) => s.nome.toLowerCase() === skillName.toLowerCase());
         if (!skill) {
-          // Adicionar como tipo 'cargo' por padrão (ou outro critério se desejar)
-          const { data: newSkill } = await supabase.from('skills').insert([{ nome: skillName, tipo: 'cargo' }]).select();
-          if (newSkill && newSkill[0]) {
-            skill = newSkill[0];
+          const { data: newSkillData, error: insertError } = await supabase.from('skills').insert([{ nome: skillName, tipo: 'cargo' }]).select();
+          
+          if (insertError) {
+            console.error(`Erro ao inserir nova skill '${skillName}':`, insertError);
+            continue;
+          }
+
+          if (newSkillData && newSkillData[0]) {
+            const newSkill = newSkillData[0] as Skill;
+            allSkills?.push(newSkill);
+            skill = newSkill;
           }
         }
         if (skill) skillsForThisRow.push({ nome: skill.nome, tipo: skill.tipo });
@@ -172,42 +178,11 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
         nivel_experiencia: row['Nível de Experiência'] || null,
         gestor_area: row['Gestor da Área'] || '',
         gestor_direto: row['Gestor Direto'] || '',
-        regime: null,
-        local_alocacao: null,
-        proficiencia_cargo: null,
-        java: null,
-        javascript: null,
-        python: null,
-        typescript: null,
-        php: null,
-        dotnet: null,
-        react: null,
-        angular: null,
-        ionic: null,
-        flutter: null,
-        mysql: null,
-        postgres: null,
-        oracle_db: null,
-        sql_server: null,
-        mongodb: null,
-        aws: null,
-        azure: null,
-        gcp: null,
         outras_tecnologias: skillsForThisRow.map(s => `${s.nome} (${s.tipo})`).join(', '),
         hora_ultima_modificacao: new Date().toISOString(),
         disponivel_compartilhamento: row['Disponível para Compartilhamento']?.toLowerCase() === 'sim',
-        percentual_compartilhamento: row['Percentual de Compartilhamento'] as '100' | '75' | '50' | '25' | null,
-        gerencia_projetos: null,
-        administracao_projetos: null,
-        analise_requisitos: null,
-        android: null,
-        cobol: null,
-        linguagem_r: null,
-        linguagem_c: null,
-        linguagem_cpp: null,
-        windows: null,
-        raspberry_pi: null,
-        arduino: null
+        percentual_compartilhamento: row['Percentual de Compartilhamento'] || null,
+        regime: null, local_alocacao: null, proficiencia_cargo: null, java: null, javascript: null, python: null, typescript: null, php: null, dotnet: null, react: null, angular: null, ionic: null, flutter: null, mysql: null, postgres: null, oracle_db: null, sql_server: null, mongodb: null, aws: null, azure: null, gcp: null, gerencia_projetos: null, administracao_projetos: null, analise_requisitos: null, android: null, cobol: null, linguagem_r: null, linguagem_c: null, linguagem_cpp: null, windows: null, raspberry_pi: null, arduino: null
       };
     }));
     onImport(professionalsToImport);
@@ -224,7 +199,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="fixed inset-0 flex items-center justify-center z-50"
+        className="fixed inset-0 flex items-center justify-center z-50 bg-black/50"
       >
         <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 border border-white/20 text-center">
           <motion.div
@@ -249,64 +224,56 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="max-w-6xl mx-auto"
+        className="p-8"
       >
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
-              <button
-                onClick={() => setShowPreview(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors mr-4"
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors mr-4"
+                >
+                  <ArrowLeft className="h-6 w-6 text-white" />
+                </button>
+                <h2 className="text-2xl font-bold text-white">
+                  Prévia dos Dados ({previewData.length} profissionais)
+                </h2>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={processImport}
+                className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300"
               >
-                <ArrowLeft className="h-6 w-6 text-white" />
-              </button>
-              <h2 className="text-2xl font-bold text-white">
-                Prévia dos Dados ({previewData.length} profissionais)
-              </h2>
+                Confirmar Importação
+              </motion.button>
             </div>
-            
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={async () => { await processImport(); }}
-              className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300"
-            >
-              Confirmar Importação
-            </motion.button>
-          </div>
-
-          <div className="overflow-auto max-h-96">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/20">
-                  <th className="text-left p-3 text-slate-300">Nome</th>
-                  <th className="text-left p-3 text-slate-300">Email</th>
-                  <th className="text-left p-3 text-slate-300">Área</th>
-                  <th className="text-left p-3 text-slate-300">Skill Principal</th>
-                  <th className="text-left p-3 text-slate-300">Gestor da Área</th>
-                  <th className="text-left p-3 text-slate-300">Gestor Direto</th>
-                  <th className="text-left p-3 text-slate-300">Disponível para Compartilhamento</th>
-                  <th className="text-left p-3 text-slate-300">Percentual</th>
-                </tr>
-              </thead>
-              <tbody>
-                {previewData.slice(0, 10).map((row: any, index) => (
-                  <tr key={index} className="border-b border-white/10">
-                    <td className="p-3 text-white">{row.Nome}</td>
-                    <td className="p-3 text-slate-300">{row.Email}</td>
-                    <td className="p-3 text-slate-300">{row.Area}</td>
-                    <td className="p-3 text-slate-300">{row['Skill Principal']}</td>
-                    <td className="p-3 text-slate-300">{row['Gestor da Área']}</td>
-                    <td className="p-3 text-slate-300">{row['Gestor Direto']}</td>
-                    <td className="p-3 text-slate-300">{row['Disponivel para Compartilhamento']}</td>
-                    <td className="p-3 text-slate-300">{row['Percentual de Compartilhamento']}%</td>
+            <div className="overflow-auto max-h-96">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-slate-800/80 backdrop-blur-sm">
+                  <tr className="border-b border-white/20">
+                    {previewData.length > 0 && Object.keys(previewData[0]).map((key) => (
+                      <th key={key} className="text-left p-3 text-slate-300">{key}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {previewData.length > 10 && (
+                </thead>
+                <tbody>
+                  {previewData.slice(0, 100).map((row, index) => (
+                    <tr key={index} className="border-b border-white/10 hover:bg-white/5">
+                      {Object.keys(row).map((key) => (
+                        <td key={key} className="p-3 text-white">
+                          {String(row[key as keyof ExcelRow] ?? '')}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {previewData.length > 100 && (
               <p className="text-slate-400 text-center mt-4">
-                ...e mais {previewData.length - 10} profissionais
+                ...e mais {previewData.length - 100} profissionais
               </p>
             )}
           </div>
@@ -317,113 +284,56 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onImport, onBack }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="max-w-2xl mx-auto"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-8"
     >
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center">
-            <button
-              onClick={onBack}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors mr-4"
-            >
-              <ArrowLeft className="h-6 w-6 text-white" />
-            </button>
-            <h2 className="text-3xl font-bold text-white">Importar do Excel</h2>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={generateTemplate}
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 text-sm"
-          >
-            <Download className="h-4 w-4" />
-            Baixar Modelo
-          </motion.button>
-        </div>
+      <div className="max-w-4xl mx-auto">
+        <button onClick={onBack} className="flex items-center text-slate-300 hover:text-white mb-8">
+          <ArrowLeft className="h-5 w-5 mr-2" />
+          Voltar
+        </button>
 
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6 flex items-center gap-3"
-          >
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <span className="text-red-300">{error}</span>
-          </motion.div>
-        )}
+        <h1 className="text-4xl font-bold text-white mb-4">Importar Profissionais</h1>
+        <p className="text-slate-400 mb-8">
+          Faça o upload de um arquivo .xlsx para adicionar múltiplos profissionais de uma vez.
+        </p>
 
-        <div
-          className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
-            dragActive
-              ? 'border-blue-400 bg-blue-400/10'
-              : 'border-white/30 hover:border-white/50'
-          }`}
+        <div 
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors duration-300 ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-slate-600 hover:border-slate-500'}`}
         >
-          <input
-            type="file"
-            accept=".xlsx"
-            onChange={handleFileInput}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          />
-          
-          <div className="flex flex-col items-center space-y-4">
-            <div className="p-4 bg-blue-500/20 rounded-full">
-              <FileSpreadsheet className="h-12 w-12 text-blue-400" />
-            </div>
-            <div className="text-center">
-              <h3 className="text-xl font-semibold text-white mb-2">
-                Arraste e solte seu arquivo Excel
-              </h3>
-              <p className="text-slate-400 mb-4">
-                ou clique para selecionar
-              </p>
-              <div className="flex flex-col items-center gap-4">
-                <button
-                  onClick={generateTemplate}
-                  className="text-sm text-blue-400 hover:text-blue-300 underline transition-colors"
-                >
-                  Baixar modelo de planilha
-                </button>
-                <div className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors cursor-pointer">
-                  <Upload className="h-5 w-5" />
-                  Selecionar Arquivo
-                </div>
-              </div>
-            </div>
-          </div>
-
-          </div>
-          <div className="mt-8 bg-white/5 rounded-lg p-6">
-            <h4 className="text-lg font-semibold text-white mb-4">Formato do Excel:</h4>
-            <div className="text-sm text-slate-300 space-y-2">
-              <p><strong>Colunas obrigatórias:</strong></p>
-              <ul className="list-disc list-inside ml-4 space-y-1">
-                <li>Nome</li>
-                <li>Email</li>
-                <li>Area</li>
-                <li>Skill Principal</li>
-                <li>Gestor da Área</li>
-                <li>Gestor Direto</li>
-                <li>Disponivel para Compartilhamento (Sim/Não)</li>
-                <li>Percentual de Compartilhamento (100/75/50/25)</li>
-              </ul>
-              <p className="mt-4"><strong>Colunas opcionais:</strong></p>
-              <ul className="list-disc list-inside ml-4 space-y-1">
-                <li>Outras Skills (separadas por vírgula)</li>
-                <li>Nivel (Júnior, Pleno, Sênior)</li>
-              </ul>
-              <p className="mt-4 text-blue-300">
-                Dica: Clique em "Baixar modelo de planilha" para obter um arquivo Excel pré-formatado com todas as colunas e validações.
-              </p>
-            </div>
-          </div>
+          <input type="file" id="file-upload" className="hidden" accept=".xlsx" onChange={handleFileInput} />
+          <label htmlFor="file-upload" className="cursor-pointer">
+            <FileSpreadsheet className="h-16 w-16 mx-auto text-slate-400 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">
+              {dragActive ? 'Solte o arquivo aqui' : 'Arraste e solte ou clique para enviar'}
+            </h3>
+            <p className="text-slate-500">Apenas arquivos .xlsx são permitidos</p>
+          </label>
         </div>
+
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 bg-red-500/20 border border-red-500/50 text-red-300 p-4 rounded-lg flex items-center"
+          >
+            <AlertCircle className="h-5 w-5 mr-3" />
+            <span>{error}</span>
+          </motion.div>
+        )}
+
+        <div className="mt-8 text-center">
+            <button onClick={generateTemplate} className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors">
+                <Download className="h-5 w-5 mr-2"/>
+                Baixar modelo de planilha
+            </button>
+        </div>
+      </div>
     </motion.div>
   );
 };

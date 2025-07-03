@@ -36,11 +36,13 @@ function analyzeExcelFile(path: string) {
       // Tenta pegar a primeira linha como cabeçalhos
       // A opção { header: 1 } retorna um array de arrays.
       // range: 0 especifica para processar apenas a primeira linha (índice 0).
-      const jsonDataFirstRow: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0 });
-      let headers: any[] = [];
+      const jsonDataFirstRow = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0 }) as unknown[][];
+      let headers: string[] = [];
 
       if (jsonDataFirstRow.length > 0 && Array.isArray(jsonDataFirstRow[0])) {
-        headers = jsonDataFirstRow[0].filter(header => header !== null && header !== undefined && String(header).trim() !== ''); // Filtra cabeçalhos vazios
+        headers = jsonDataFirstRow[0]
+          .map(header => String(header ?? '').trim()) // Converte para string e remove espaços
+          .filter(header => header !== ''); // Filtra cabeçalhos vazios
       }
       
       if (headers.length > 0) {
@@ -48,7 +50,7 @@ function analyzeExcelFile(path: string) {
       } else {
         // Se a primeira linha não forneceu cabeçalhos, tenta ler algumas linhas para inspeção
         console.log('Não foram encontrados cabeçalhos na primeira linha ou a primeira linha está vazia.');
-        const sampleData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 5 }); // Pega até 5 linhas
+        const sampleData = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 5 }) as unknown[][]; // Pega até 5 linhas
         if (sampleData.length > 0) {
           console.log('Amostra de dados das primeiras linhas (para ajudar a identificar cabeçalhos):');
           sampleData.forEach((row, index) => {
