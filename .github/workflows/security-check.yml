@@ -65,10 +65,10 @@ jobs:
           }
         }
     
-          - name: 🏗️ Build Test
-        run: |
-          echo "🏗️ Testing build process..."
-          npm run build:local
+    - name: 🏗️ Build Test
+      run: |
+        echo "🏗️ Testing build process..."
+        npm run build:local
         if [ $? -ne 0 ]; then
           echo "❌ Build failed!"
           exit 1
