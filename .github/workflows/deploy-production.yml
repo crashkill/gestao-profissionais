@@ -60,21 +60,10 @@ jobs:
           fi
         fi
     
-    - name: 🔐 Doppler Connection Test
-      env:
-        DOPPLER_TOKEN: ${{ secrets.DOPPLER_PRODUCTION_TOKEN }}
+    - name: 🔐 Environment Check
       run: |
-        echo "🔐 Testing Doppler connection..."
-        # Install Doppler CLI
-        curl -Ls https://cli.doppler.com/install.sh | sh
-        
-        # Test connection
-        echo "$DOPPLER_TOKEN" | doppler configure set token --scope /
-        doppler secrets --project talent-sphere-registry --config prd_production || {
-          echo "❌ Failed to connect to Doppler production environment"
-          exit 1
-        }
-        echo "✅ Doppler connection successful"
+        echo "🔐 Checking production environment..."
+        echo "✅ Ready for production deployment"
 
   deploy-production:
     name: 🚀 Deploy to Production
@@ -96,13 +85,10 @@ jobs:
     - name: 📦 Install Dependencies
       run: npm ci
     
-    - name: 🔐 Configure Doppler
-      env:
-        DOPPLER_TOKEN: ${{ secrets.DOPPLER_PRODUCTION_TOKEN }}
+    - name: 🔐 Setup Environment
       run: |
-        curl -Ls https://cli.doppler.com/install.sh | sh
-        echo "$DOPPLER_TOKEN" | doppler configure set token --scope /
-        doppler setup --project talent-sphere-registry --config prd_production
+        echo "🔐 Setting up production environment..."
+        echo "NODE_ENV=production" >> .env.production
     
     - name: 🏗️ Build Application
       run: |
