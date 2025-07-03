@@ -100,7 +100,9 @@ const Index = () => {
             arduino: null,
             gerencia_projetos: null,
             administracao_projetos: null,
-            analise_requisitos: null
+            analise_requisitos: null,
+            gestor_area: 'Marcelo Costa',
+            gestor_direto: 'Ana Paula'
           },
           {
             id: '2',
@@ -145,7 +147,9 @@ const Index = () => {
             arduino: null,
             gerencia_projetos: null,
             administracao_projetos: null,
-            analise_requisitos: null
+            analise_requisitos: null,
+            gestor_area: 'Roberto Almeida',
+            gestor_direto: 'Fernanda Lima'
           },
           {
             id: '3',
@@ -185,15 +189,17 @@ const Index = () => {
             linguagem_r: null,
             linguagem_c: null,
             linguagem_cpp: null,
-            windows: null,
+                        windows: null,
             raspberry_pi: null,
             arduino: null,
             gerencia_projetos: null,
             administracao_projetos: null,
-            analise_requisitos: null
+            analise_requisitos: null,
+            gestor_area: 'Carlos Moreira',
+            gestor_direto: 'Patricia Santos'
           }
         ];
-        
+
         setProfessionals(mockData);
         console.log('✅ Dados mock carregados:', mockData.length, 'profissionais');
         // Não definir erro quando usar dados mock - apenas avisar no console
