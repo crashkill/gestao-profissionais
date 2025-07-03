@@ -163,8 +163,13 @@ jobs:
     
     steps:
       - name: 🚀 Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist-homologacao
+          keep_files: false # Força a limpeza de arquivos antigos no deploy
+          publish_branch: gh-pages-homologacao # Branch de homologação
+          commit_message: "🚀 Deploy Homologação: ${{ github.sha }}"
 
       - name: 🎉 Notify Success
         if: success()

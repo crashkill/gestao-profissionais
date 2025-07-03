@@ -114,6 +114,7 @@ jobs:
       with:
         github_token: ${{ secrets.GH_PAGES_TOKEN }}
         publish_dir: ./dist
+        keep_files: false # Força a limpeza de arquivos antigos no deploy
         cname: ${{ secrets.CUSTOM_DOMAIN }}
         commit_message: '🚀 Deploy: ${{ github.sha }}'
     
