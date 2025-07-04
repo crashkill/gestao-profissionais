@@ -109,7 +109,6 @@ jobs:
         DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
       run: |
         echo "🏗️ Building for production..."
-        echo "${DOPPLER_TOKEN}" | doppler login
         doppler run --project gestao-profissional --config prd -- npm run build -- --mode producao
     
     - name: 🧹 Post-Build Security Scan
