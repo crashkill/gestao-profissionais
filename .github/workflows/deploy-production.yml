@@ -100,6 +100,8 @@ jobs:
     - name: 🔐 Setup Environment
       run: |
         echo "🔐 Setting up production environment..."
+        echo "VITE_APP_SUPABASE_URL=${{ secrets.VITE_APP_SUPABASE_URL_PROD }}" >> .env.production
+        echo "VITE_APP_ANON_KEY=${{ secrets.VITE_APP_ANON_KEY_PROD }}" >> .env.production
         echo "NODE_ENV=production" >> .env.production
     
     - name: 🏗️ Build Application
