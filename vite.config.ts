@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
       proxyTarget: 'https://zbiivgtdamejiwcabmcv.supabase.co',
     },
     production: {
-      base: 'gestao-profissional/', // CORREÇÃO FINAL: Path em minúsculas para corresponder ao URL do GitHub Pages
+      base: 'Gestao-Profissional/', // CORREÇÃO FINALÍSSIMA: Path com case correto para o GitHub Pages
       proxyTarget: 'https://pwksgdjjkryqryqrvyja.supabase.co', // Produção
     }
   };
