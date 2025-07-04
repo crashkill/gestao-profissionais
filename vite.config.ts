@@ -8,40 +8,51 @@ export default defineConfig(({ mode }) => {
   // Carrega as variáveis de ambiente
   const env = loadEnv(mode, process.cwd(), '');
   
+  // Validação do ambiente atual
+  const validateEnvironment = (mode: string): 'development' | 'homologacao' | 'production' => {
+    if (mode === 'production' || process.env.GITHUB_ACTIONS === 'true' && process.env.VITE_ENVIRONMENT === 'production') {
+      return 'production';
+    } else if (mode === 'homologacao' || process.env.GITHUB_ACTIONS === 'true' && process.env.VITE_ENVIRONMENT === 'homologacao') {
+      return 'homologacao';
+    }
+    return 'development';
+  };
+
   // Configuração de ambientes
   const environmentConfig = {
     development: {
       base: '/',
-      proxyTarget: 'https://zbiivgtdamejiwcabmcv.supabase.co', // Homologação
+      proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     },
     homologacao: {
-      base: '/gestao-profissional-homologacao/',
-      proxyTarget: 'https://zbiivgtdamejiwcabmcv.supabase.co',
+      base: '/Gestao-Profissional-Homolog/',
+      proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     },
     production: {
-      base: 'Gestao-Profissional/', // CORREÇÃO FINALÍSSIMA: Path com case correto para o GitHub Pages
-      proxyTarget: 'https://pwksgdjjkryqryqrvyja.supabase.co', // Produção
+      base: '/Gestao-Profissional/',
+      proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     }
   };
 
   // Detecta o ambiente atual
-  const currentEnv = mode === 'producao' || mode === 'production' ? 'production' 
-                   : mode === 'homologacao' ? 'homologacao' 
-                   : 'development';
-  
+  const currentEnv = validateEnvironment(mode);
   const config = environmentConfig[currentEnv];
-  const isProduction = mode === 'production' || process.env.GITHUB_ACTIONS === 'true';
+  const isProduction = currentEnv === 'production';
   
-  console.log(`🔧 Configurando Vite para ambiente: ${currentEnv}`);
+  // Logs para debug
+  console.log('🔧 Configuração do Ambiente:');
+  console.log(`📌 Modo: ${mode}`);
+  console.log(`📌 Ambiente: ${currentEnv}`);
   console.log(`📁 Base URL: ${config.base}`);
   console.log(`🔗 Proxy Target: ${config.proxyTarget}`);
+  console.log(`🔑 Supabase URL: ${env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL}`);
 
-  // Configurações de build otimizadas
-  const buildConfig: any = {
-    outDir: mode === 'homologacao' ? 'dist-homologacao' : 'dist',
+  // Configurações de build
+  const buildConfig = {
+    outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: mode === 'development',
-    ...(isProduction ? {
+    sourcemap: currentEnv === 'development',
+    ...(isProduction && {
       minify: 'terser' as const,
       terserOptions: {
         compress: {
@@ -57,15 +68,34 @@ export default defineConfig(({ mode }) => {
           },
         },
       }
-    } : {})
+    })
   };
+
+  // Validação das variáveis de ambiente
+  const validateEnvVars = () => {
+    const supabaseUrl = env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseKey = env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      if (currentEnv === 'development') {
+        console.error('❌ Variáveis do Doppler não encontradas. Execute: doppler run -- vite');
+        process.exit(1);
+      } else {
+        console.error('❌ Variáveis do GitHub Actions não encontradas.');
+        process.exit(1);
+      }
+    }
+  };
+
+  // Valida as variáveis de ambiente
+  validateEnvVars();
 
   return {
     base: config.base,
     build: buildConfig,
     server: {
       host: "::",
-      port: mode === 'homologacao' ? 8080 : 5173,
+      port: 5173,
       proxy: {
         '/rest': {
           target: config.proxyTarget,
@@ -73,7 +103,7 @@ export default defineConfig(({ mode }) => {
           secure: true,
           configure: (proxy, _options) => {
             proxy.on('proxyReq', (proxyReq, req, _res) => {
-              console.log(`🌐 Proxy request (${mode}): ${req.method} ${req.url}`);
+              console.log(`🌐 Proxy request (${currentEnv}): ${req.method} ${req.url}`);
             });
           },
         },
@@ -85,7 +115,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      mode === 'development' && componentTagger(),
+      currentEnv === 'development' && componentTagger(),
     ].filter(Boolean),
     resolve: {
       alias: {
@@ -93,9 +123,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      // Injeta variáveis de ambiente em tempo de compilação
       __ENVIRONMENT__: JSON.stringify(currentEnv),
       __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+      'process.env.VITE_APP_VERSION': JSON.stringify(process.env.npm_package_version),
+      'process.env.VITE_ENVIRONMENT': JSON.stringify(currentEnv),
+      'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL),
+      'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY),
     },
   };
 });
