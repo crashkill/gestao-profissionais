@@ -43,13 +43,16 @@ try {
 
 // Função para detectar se devemos usar proxy
 const shouldUseProxy = () => {
-  return import.meta.env.DEV && window.location.hostname === 'localhost';
+  // O proxy é útil apenas em desenvolvimento local para contornar o CORS
+  return import.meta.env.DEV;
 };
 
 // URL do Supabase com proxy para desenvolvimento local
 const getSupabaseUrl = () => {
   if (shouldUseProxy()) {
-    return `${window.location.origin}/supabase-api`;
+    // A URL deve corresponder ao caminho configurado no proxy do vite.config.ts
+    console.log("🔄 Usando proxy local para requisições Supabase via /rest");
+    return '/rest';
   }
   return supabaseUrl;
 };

@@ -156,3 +156,34 @@ Para problemas ou dúvidas:
 ---
 
 **Desenvolvido para HITSS - Grupo Telefônica** 🚀
+
+## Integração com MCPs (Model Context Protocol)
+
+### 1. Aprovação Manual no Deploy de Produção
+- O workflow de produção exige aprovação manual via environment reviewers no GitHub.
+- Para configurar, acesse Settings > Environments > production e adicione seu usuário como reviewer.
+
+### 2. Diff de Estrutura dos Bancos (MCP-Supabase)
+- Para comparar a estrutura dos bancos de produção e homologação:
+```bash
+npx @supabase/mcp-server-supabase@latest compare --source pwksgdjjkryqryqrvyja --target zbiivgtdamejiwcabmcv
+```
+- O resultado será um relatório das diferenças de estrutura.
+
+### 3. Integração Doppler + GitHub Actions
+- Exporte os segredos do Doppler antes do build/deploy:
+```yaml
+- name: Install Doppler CLI
+  run: curl -sLf --retry 3 --retry-delay 2 https://downloads.doppler.com/cli/install.sh | sh
+- name: Export Doppler secrets
+  run: doppler secrets download --no-file --format=env >> $GITHUB_ENV
+```
+- Isso garante que todas as variáveis sensíveis estejam disponíveis no ambiente do Actions.
+
+### 4. Referências MCPs disponíveis
+- MCP-Supabase: gerenciamento e comparação de bancos Supabase
+- MCP GitHub: automação de workflows, environments e reviewers
+- Doppler: gestão centralizada de segredos
+- Outros MCPs: Browserbase, Playwright, Puppeteer, Gitlab, Azure, Huggingface, Replicate, Magic
+
+---
