@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
   };
 
   // Detecta o ambiente atual
-  const currentEnv = mode === 'production' ? 'production' 
+  const currentEnv = mode === 'producao' || mode === 'production' ? 'production' 
                    : mode === 'homologacao' ? 'homologacao' 
                    : 'development';
   

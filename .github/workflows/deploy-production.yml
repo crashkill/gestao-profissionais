@@ -95,7 +95,7 @@ jobs:
     - name: 🏗️ Build Application
       run: |
         echo "🏗️ Building for production..."
-        npm run build:local
+        npm run build:producao
     
     - name: 🧹 Post-Build Security Scan
       run: |
