@@ -116,12 +116,17 @@ jobs:
           exit 1
         fi
     
+    - name: 🚀 Configure GitHub Pages
+      uses: actions/configure-pages@v4
+      with:
+        static_site_generator: vite
+    
     - name: 📊 Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./dist
-        destination_dir: homolog
+        destination_dir: Gestao-Profissional-Homolog
         force_orphan: true
         cname: ${{ secrets.CNAME_HOMOLOG }}
     
