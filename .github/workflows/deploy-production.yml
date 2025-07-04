@@ -33,6 +33,11 @@ jobs:
     - name: 📦 Install Dependencies
       run: npm ci
     
+    - name: 🤫 Setup Doppler
+      uses: dopplerhq/cli-action@v7
+      with:
+        token: ${{ secrets.DOPPLER_TOKEN }}
+    
     - name: 🔍 Critical Security Check
       id: security-check
       run: |
@@ -86,6 +91,11 @@ jobs:
     
     - name: 📦 Install Dependencies
       run: npm ci
+    
+    - name: 🤫 Setup Doppler
+      uses: dopplerhq/cli-action@v7
+      with:
+        token: ${{ secrets.DOPPLER_TOKEN }}
     
     - name: 🔐 Setup Environment
       run: |
