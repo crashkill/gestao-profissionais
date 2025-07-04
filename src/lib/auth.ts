@@ -5,7 +5,7 @@ export interface AuthUser {
   id: string;
   email?: string;
   role?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: any;
 }
 
 export interface AuthSession {
@@ -89,7 +89,7 @@ class AuthService {
     }
   }
 
-  async signUpWithEmail(email: string, password: string, metadata?: Record<string, unknown>) {
+  async signUpWithEmail(email: string, password: string, metadata?: any) {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,

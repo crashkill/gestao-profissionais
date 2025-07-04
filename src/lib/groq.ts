@@ -1,9 +1,7 @@
-import { Professional } from '../types/Professional';
-
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-export async function askGroq(question: string, professionals: Professional[]): Promise<string> {
+export async function askGroq(question: string, professionals: any[]): Promise<string> {
   console.log('⚡ [DEBUG] Groq IA - Iniciando consulta...');
   console.log('⚡ [DEBUG] Groq API Key presente:', !!GROQ_API_KEY);
   

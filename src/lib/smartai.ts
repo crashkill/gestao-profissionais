@@ -1,9 +1,8 @@
 import { askDeepSeek } from './togetherai';
 import { askGroq } from './groq';
-import { Professional } from '../types/Professional';
 
 // Sistema inteligente que testa múltiplas IAs e usa a melhor disponível
-export async function askSmartAI(question: string, professionals: Professional[]): Promise<string> {
+export async function askSmartAI(question: string, professionals: any[]): Promise<string> {
   console.log('🧠 [SMART AI] Iniciando sistema inteligente de IA...');
   
   const startTime = Date.now();
@@ -41,7 +40,7 @@ Responda sempre em português brasileiro de forma clara e direta.`
 
     if (response.ok) {
       const data = await response.json();
-      const answer = data.choices?.[0]?.message?.content as string | undefined;
+      const answer = data.choices?.[0]?.message?.content;
       if (answer) {
         const endTime = Date.now();
         console.log(`✅ [SMART AI] Together.xyz respondeu em ${endTime - startTime}ms`);
@@ -84,12 +83,9 @@ Responda sempre em português brasileiro de forma clara e direta.`
 }
 
 // Análise offline inteligente com dados reais
-function generateSmartOfflineAnalysis(question: string, professionals: Professional[]): string {
+function generateSmartOfflineAnalysis(question: string, professionals: any[]): string {
   console.log('🔍 [ANÁLISE OFFLINE] Processando dados reais dos profissionais...');
-  
-  if (professionals.length > 0) {
-    console.log('🔍 [DEBUG] Estrutura do primeiro profissional:', JSON.stringify(professionals[0], null, 2));
-  }
+  console.log('🔍 [DEBUG] Estrutura do primeiro profissional:', JSON.stringify(professionals[0], null, 2));
   
   // Debug: verificar valores únicos dos campos importantes
   const regimeValues = [...new Set(professionals.map(p => p.regime).filter(Boolean))];
@@ -125,12 +121,36 @@ function generateSmartOfflineAnalysis(question: string, professionals: Professio
   
   // Análise de tecnologias - campos de string
   const techCount = {
-    javascript: professionals.filter(p => p.javascript && p.javascript.toLowerCase() !== 'sem conhecimento' && p.javascript.toLowerCase() !== 'null').length,
-    java: professionals.filter(p => p.java && p.java.toLowerCase() !== 'sem conhecimento' && p.java.toLowerCase() !== 'null').length,
-    python: professionals.filter(p => p.python && p.python.toLowerCase() !== 'sem conhecimento' && p.python.toLowerCase() !== 'null').length,
-    react: professionals.filter(p => p.react && p.react.toLowerCase() !== 'sem conhecimento' && p.react.toLowerCase() !== 'null').length,
-    typescript: professionals.filter(p => p.typescript && p.typescript.toLowerCase() !== 'sem conhecimento' && p.typescript.toLowerCase() !== 'null').length,
-    mysql: professionals.filter(p => p.mysql && p.mysql.toLowerCase() !== 'sem conhecimento' && p.mysql.toLowerCase() !== 'null').length
+    javascript: professionals.filter(p => 
+      p.javascript && 
+      p.javascript.toLowerCase() !== 'sem conhecimento' && 
+      p.javascript.toLowerCase() !== 'null'
+    ).length,
+    java: professionals.filter(p => 
+      p.java && 
+      p.java.toLowerCase() !== 'sem conhecimento' && 
+      p.java.toLowerCase() !== 'null'
+    ).length,
+    python: professionals.filter(p => 
+      p.python && 
+      p.python.toLowerCase() !== 'sem conhecimento' && 
+      p.python.toLowerCase() !== 'null'
+    ).length,
+    react: professionals.filter(p => 
+      p.react && 
+      p.react.toLowerCase() !== 'sem conhecimento' && 
+      p.react.toLowerCase() !== 'null'
+    ).length,
+    typescript: professionals.filter(p => 
+      p.typescript && 
+      p.typescript.toLowerCase() !== 'sem conhecimento' && 
+      p.typescript.toLowerCase() !== 'null'
+    ).length,
+    mysql: professionals.filter(p => 
+      p.mysql && 
+      p.mysql.toLowerCase() !== 'sem conhecimento' && 
+      p.mysql.toLowerCase() !== 'null'
+    ).length
   };
   
   console.log('🔍 [DEBUG] Contagens de tecnologia:', techCount);
@@ -140,12 +160,12 @@ function generateSmartOfflineAnalysis(question: string, professionals: Professio
   // Encontrar tecnologia mais comum
   const mostCommonTech = Object.entries(techCount)
     .filter(([, count]) => count > 0) // Apenas tecnologias com pelo menos 1 profissional
-    .sort(([,a], [,b]) => b - a)[0] as [string, number] | undefined;
+    .sort(([,a], [,b]) => b - a)[0];
   
   // Encontrar senioridade predominante
   const mostCommonSeniority = Object.entries(seniorityCount)
     .filter(([, count]) => count > 0) // Apenas senioridades com pelo menos 1 profissional
-    .sort(([,a], [,b]) => b - a)[0] as [string, number] | undefined;
+    .sort(([,a], [,b]) => b - a)[0];
 
   // Análise específica da pergunta
   let specificInsights = '';
@@ -201,7 +221,7 @@ ${seniorProfessionals.length > 0 ?
 
   // Respostas específicas baseadas na pergunta
   if (questionLower.includes('quantos') && (questionLower.includes('mysql') || questionLower.includes('react') || questionLower.includes('python'))) {
-    const counts = [];
+    let counts = [];
     if (questionLower.includes('mysql')) counts.push(`MySQL: ${techCount.mysql} profissionais`);
     if (questionLower.includes('react')) counts.push(`React: ${techCount.react} profissionais`);
     if (questionLower.includes('python')) counts.push(`Python: ${techCount.python} profissionais`);

@@ -119,8 +119,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit, onBack }) => {
 
     const mainSkillColumn = SKILL_COLUMN_MAP[formData.mainSkill];
     if (mainSkillColumn && mainSkillColumn in professional) {
-      // Safely assign the value using a type assertion that allows string indexing
-      (professional as Record<string, unknown>)[mainSkillColumn] = formData.level;
+      (professional as any)[mainSkillColumn] = formData.level;
     }
 
     onSubmit(professional);
