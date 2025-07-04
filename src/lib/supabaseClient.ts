@@ -41,25 +41,11 @@ try {
   throw new Error(error);
 }
 
-// Função para detectar se devemos usar proxy
-const shouldUseProxy = () => {
-  // O proxy é útil apenas em desenvolvimento local para contornar o CORS
-  return import.meta.env.DEV;
-};
-
-// URL do Supabase com proxy para desenvolvimento local
-const getSupabaseUrl = () => {
-  if (shouldUseProxy()) {
-    // A URL deve corresponder ao caminho configurado no proxy do vite.config.ts
-    console.log("🔄 Usando proxy local para requisições Supabase via /rest");
-    return '/rest';
-  }
-  return supabaseUrl;
-};
-
 // Cliente principal do Supabase
-export const supabase = createClient(getSupabaseUrl(), supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    storage: localStorage,
+    autoRefreshToken: true,
     persistSession: false // Para aplicação sem autenticação de usuário
   }
 });
