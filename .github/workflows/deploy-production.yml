@@ -35,8 +35,8 @@ jobs:
     
     - name: 🤫 Setup Doppler
       uses: dopplerhq/cli-action@v3
-      with:
-        token: ${{ secrets.DOPPLER_TOKEN }}
+      env:
+        DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
     
     - name: 🔍 Critical Security Check
       id: security-check
@@ -94,8 +94,8 @@ jobs:
     
     - name: 🤫 Setup Doppler
       uses: dopplerhq/cli-action@v3
-      with:
-        token: ${{ secrets.DOPPLER_TOKEN }}
+      env:
+        DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
     
     - name: 🔐 Setup Environment
       run: |
