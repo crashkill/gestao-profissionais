@@ -54,7 +54,7 @@ jobs:
         fi
 
   deploy-homologacao:
-    name: deploy-homologacao
+    name: 🚀 Deploy Homologação
     needs: pre-deploy-security
     if: |
       always() &&
