@@ -99,10 +99,14 @@ jobs:
           echo "VITE_ENVIRONMENT=homologacao"
         } > .env
         echo "✅ Environment file created"
+        cat .env
     
     - name: 🏗️ Build Application
       run: |
         echo "🏗️ Building for homologação..."
+        VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL_HOMOLOG }} \
+        VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY_HOMOLOG }} \
+        VITE_ENVIRONMENT=homologacao \
         npm run build
     
     - name: 🧹 Post-Build Security Scan
