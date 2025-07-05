@@ -10,9 +10,9 @@ export default defineConfig(({ mode }) => {
   
   // Validação do ambiente atual
   const validateEnvironment = (mode: string): 'development' | 'homologacao' | 'production' => {
-    if (mode === 'production' || process.env.GITHUB_ACTIONS === 'true' && process.env.VITE_ENVIRONMENT === 'production') {
+    if (mode === 'production') {
       return 'production';
-    } else if (mode === 'homologacao' || process.env.GITHUB_ACTIONS === 'true' && process.env.VITE_ENVIRONMENT === 'homologacao') {
+    } else if (mode === 'homologacao') {
       return 'homologacao';
     }
     return 'development';
