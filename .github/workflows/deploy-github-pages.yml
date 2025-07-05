@@ -33,7 +33,10 @@ jobs:
         cache: 'npm'
     
     - name: 📦 Install Dependencies
-      run: npm ci
+      run: |
+        npm ci
+        # Limpa cache do Vite
+        rm -rf node_modules/.vite
     
     - name: 🔍 Run Security Check
       run: npm audit || true
