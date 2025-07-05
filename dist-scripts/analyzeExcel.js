@@ -31,7 +31,9 @@ function analyzeExcelFile(path) {
             const jsonDataFirstRow = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0 });
             let headers = [];
             if (jsonDataFirstRow.length > 0 && Array.isArray(jsonDataFirstRow[0])) {
-                headers = jsonDataFirstRow[0].filter(header => header !== null && header !== undefined && String(header).trim() !== ''); // Filtra cabeçalhos vazios
+                headers = jsonDataFirstRow[0]
+                    .map(header => String(header ?? '').trim()) // Converte para string e remove espaços
+                    .filter(header => header !== ''); // Filtra cabeçalhos vazios
             }
             if (headers.length > 0) {
                 console.log('Cabeçalhos (Colunas da primeira linha):', headers);

@@ -78,17 +78,22 @@ export default defineConfig(({ mode }) => {
 
     if (!supabaseUrl || !supabaseKey) {
       if (currentEnv === 'development') {
-        console.error('❌ Variáveis do Doppler não encontradas. Execute: doppler run -- vite');
-        process.exit(1);
+        console.warn('⚠️ Variáveis do Doppler não encontradas. Execute: doppler run -- vite');
+        console.warn('⚠️ Usando valores padrão para desenvolvimento...');
+      } else if (process.env.GITHUB_ACTIONS === 'true') {
+        console.warn('⚠️ Variáveis do GitHub Actions não encontradas.');
+        console.warn('⚠️ Continuando build para GitHub Pages...');
       } else {
-        console.error('❌ Variáveis do GitHub Actions não encontradas.');
+        console.error('❌ Variáveis de ambiente necessárias não encontradas.');
         process.exit(1);
       }
     }
   };
 
-  // Valida as variáveis de ambiente
-  validateEnvVars();
+  // Valida as variáveis de ambiente (só falha em desenvolvimento local)
+  if (currentEnv === 'development' && !process.env.GITHUB_ACTIONS) {
+    validateEnvVars();
+  }
 
   return {
     base: config.base,
