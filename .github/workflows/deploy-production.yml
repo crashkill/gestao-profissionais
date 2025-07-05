@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://crashkill.github.io/Gestao-Profissional
+      url: https://crashkill.github.io/gestao-profissionais
     
     steps:
     - name: 📥 Checkout Code
@@ -149,7 +149,7 @@ jobs:
         * **Date**: $(date)
         * **Commit**: ${{ github.sha }}
         * **Tag**: ${{ github.ref }}
-        * **URL**: https://crashkill.github.io/Gestao-Profissional
+        * **URL**: https://crashkill.github.io/gestao-profissionais
         EOF
 
   notify-deployment:
@@ -162,7 +162,7 @@ jobs:
     - name: 📧 Send Notification
       run: |
         if [ "${{ needs.deploy-production.result }}" == "success" ]; then
-          echo "✅ Deployment successful! URL: https://crashkill.github.io/Gestao-Profissional"
+          echo "✅ Deployment successful! URL: https://crashkill.github.io/gestao-profissionais"
         else
           echo "⚠️ Deployment status: ${{ needs.deploy-production.result }}"
         fi 

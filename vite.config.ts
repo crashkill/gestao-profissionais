@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
       proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     },
     production: {
-      base: '/Gestao-Profissional/',
+      base: '/gestao-profissionais/',
       proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     }
   };
