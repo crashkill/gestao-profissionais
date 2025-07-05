@@ -117,14 +117,19 @@ jobs:
           exit 1
         fi
     
-    - name: 🚀 Deploy to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@v4
+    - name: 🚀 Configure GitHub Pages
+      uses: actions/configure-pages@v4
       with:
-        folder: dist
-        branch: gh-pages
-        target-folder: homolog
-        clean: true
-        token: ${{ secrets.GITHUB_TOKEN }}
+        static_site_generator: vite
+    
+    - name: 📊 Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        destination_dir: homolog
+        force_orphan: true
+        cname: ${{ secrets.CNAME_HOMOLOG }}
     
     - name: 🔍 Post-Deploy Verification
       run: |
