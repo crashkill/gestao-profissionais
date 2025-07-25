@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
       proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     },
     homologacao: {
-      base: '/Gestao-Profissional-Homolog/',
+      base: '/gestao-profissionais/homolog/',
       proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     },
     production: {
