@@ -1,6 +1,6 @@
 # 🎯 Talent Sphere Registry - HITSS
 
-Sistema de gestão de profissionais de TI para HITSS (Grupo Telefônica) com interface moderna e conectividade robusta com Supabase.
+Sistema de gestão de profissionais de TI para HITSS (GlobalHitss) com interface moderna e conectividade robusta com Supabase.
 
 ## ✅ Status do Projeto
 
@@ -155,7 +155,7 @@ Para problemas ou dúvidas:
 
 ---
 
-**Desenvolvido para HITSS - Grupo Telefônica** 🚀
+**Desenvolvido para HITSS - GlobalHitss** 🚀
 
 ## Integração com MCPs (Model Context Protocol)
 
