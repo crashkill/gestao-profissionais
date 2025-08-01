@@ -29,7 +29,9 @@ export default defineConfig(({ mode }) => {
       proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     },
     production: {
-      base: '/gestao-profissionais/',
+      // Vercel precisa de base '/' para funcionar corretamente
+      // GitHub Pages usa '/gestao-profissionais/'
+      base: process.env.VERCEL ? '/' : '/gestao-profissionais/',
       proxyTarget: env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     }
   };

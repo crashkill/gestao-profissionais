@@ -20,6 +20,7 @@
     "build:local": "doppler run -- tsc -b && vite build",
     "build:homologacao": "tsc -b && vite build --mode homologacao",
     "build:production": "tsc -b && vite build --mode production",
+    "build:vercel": "VERCEL=true tsc -b && VERCEL=true vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
     "analyze-excel": "tsc analyzeExcel.ts --outDir ./dist-scripts && node ./dist-scripts/analyzeExcel.js",
